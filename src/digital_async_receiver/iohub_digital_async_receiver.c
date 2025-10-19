@@ -1,0 +1,137 @@
+#include "components/digital_async_receiver/digital_async_receiver.h"
+#include "board/board.h"
+
+static digital_async_receiver		*gDigitalReceiver = NULL;
+
+#ifdef DEBUG
+volatile static u32 				gDurationUs = 0;
+#endif
+
+/* --------------------------------------------------- */
+
+		// /!\ Do not add any log in this function /!\ 
+		
+	static void digital_async_receiver_handle_interrupt()
+	{
+		u32 theTimeUs = time_now_us();
+		u32 theDurationUs = theTimeUs - gDigitalReceiver->mLastTimeUs;
+		gDigitalReceiver->mLastTimeUs = theTimeUs;
+		
+#ifdef DEBUG
+		gDurationUs = theDurationUs;
+#endif
+
+		for(u8 i=0; i<gDigitalReceiver->mPluginCount; i++)
+		{
+			if (!IS_BIT_SET(gDigitalReceiver->mPacketReady, i))
+			{
+				if (gDigitalReceiver->mInterfaceList[i]->detectPacket(gDigitalReceiver->mInterfaceCtx[i], theDurationUs))
+				{
+					BIT_SET(gDigitalReceiver->mPacketReady, i);
+				}
+			}
+		}
+	}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin)
+{
+	memset(aCtx, 0x00, sizeof(digital_async_receiver));
+
+	gDigitalReceiver = aCtx;
+	aCtx->mPin = aPin;
+	aCtx->mLastTimeUs = time_now_us();
+	
+	drv_digital_set_pin_mode(aPin, PinMode_Input);
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_uninit(digital_async_receiver *aCtx)
+{
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_start(digital_async_receiver *aCtx)
+{
+	if (aCtx->mPin != 2 && aCtx->mPin != 3)
+		LOG_ERROR("PIN: %d, not valid for interrupt !", aCtx->mPin);
+
+	attachInterrupt(digitalPinToInterrupt(aCtx->mPin), digital_async_receiver_handle_interrupt, CHANGE);
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_stop(digital_async_receiver *aCtx)
+{
+	detachInterrupt(digitalPinToInterrupt(aCtx->mPin));
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_register_plugin(digital_async_receiver *aCtx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx)
+{
+	aCtx->mInterfaceList[aCtx->mPluginCount] = anInterface;
+	aCtx->mInterfaceCtx[aCtx->mPluginCount] = anInterfaceCtx;
+	aCtx->mPluginCount++;
+}
+
+/* --------------------------------------------------- */
+
+u16 digital_async_receiver_wait_for_packet(digital_async_receiver *aCtx)
+{
+	u16 thePluginID = 0;
+	
+	while(!digital_async_receiver_has_packet_available(aCtx, &thePluginID));
+	
+	return thePluginID;
+}
+
+/* --------------------------------------------------- */
+
+BOOL digital_async_receiver_has_packet_available(digital_async_receiver *aCtx, u16 *aPluginID)
+{
+	if (aCtx->mPacketReady)
+	{	
+		for (u8 i=0; i<(sizeof(aCtx->mPacketReady) * 8); i++)
+		{
+			if (IS_BIT_SET(aCtx->mPacketReady, i))
+			{
+				*aPluginID = aCtx->mInterfaceList[i]->ID;
+				LOG_ERROR("Packet available: %X\r\n", *aPluginID);
+				return TRUE;
+			}
+		}
+	}
+	
+	return FALSE;
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u16 aPluginID)
+{
+	for(u8 i=0; i<gDigitalReceiver->mPluginCount; i++)
+	{
+		if (aCtx->mInterfaceList[i]->ID == aPluginID)
+		{
+			aCtx->mInterfaceList[i]->packetHandled(aCtx->mInterfaceCtx[i]);
+			BIT_CLEAR(aCtx->mPacketReady, i);
+			return;
+		}
+	}
+	
+	LOG_ERROR("PluginID not found: %d\r\n", aPluginID);
+}
+
+/* --------------------------------------------------- */
+
+void digital_async_receiver_real_time_dump(digital_async_receiver *aCtx)
+{
+#ifdef DEBUG
+	for(;;)
+		LOG_DEBUG("%lu\r\n", gDurationUs);
+#endif
+}
