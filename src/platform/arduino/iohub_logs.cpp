@@ -1,22 +1,22 @@
 ﻿#include <stdarg.h>
 #include <Arduino.h>
 
-extern "C" void log_debug(const char *str, ...)
+extern "C" void iohub_log(iohub_log_level_t level, const char *fmt, ...)
 {
 	int i, theCount=0;
 	va_list argv;
-	
-	for(i=0; str[i] != '\0'; i++)
-		if(str[i] == '%')
+
+	for(i=0; fmt[i] != '\0'; i++)
+		if(fmt[i] == '%')
 			theCount++;
 
-	va_start(argv, str);
+	va_start(argv, fmt);
 
-	for(i=0; str[i] != '\0'; i++)
+	for(i=0; fmt[i] != '\0'; i++)
 	{
-		if(str[i]=='%')
+		if(fmt[i]=='%')
 		{
-			switch(str[++i])
+			switch(fmt[++i])
 			{
 				case 'u': 
 					Serial.print(va_arg(argv, unsigned int));
@@ -33,7 +33,7 @@ extern "C" void log_debug(const char *str, ...)
 					
 				case 'l': 
 					{
-						char theChar = str[++i];
+						char theChar = fmt[++i];
 						if (theChar == 'u')
 						{
 							Serial.print(va_arg(argv, unsigned long));
@@ -68,16 +68,22 @@ extern "C" void log_debug(const char *str, ...)
 					
 				default:
 					Serial.print('%');
-					Serial.print(str[i]);
+					Serial.print(fmt[i]);
 					break;
 			};
 		}
 		else 
 		{
-			Serial.print(str[i]);
+			Serial.print(fmt[i]);
 		}
 	}
 	
 	va_end(argv);
-	//Serial.println(); //Print trailing newline
+}
+
+void iohub_log_buffer(iohub_log_level_t level, const u8 *buffer, u16 size)
+{
+    for (int i=0; i<size; i++) 
+        IOHUB_LOG_DEBUG("0x%x ", ((u8)buffer[i])); 
+    IOHUB_LOG_DEBUG(""); 
 }

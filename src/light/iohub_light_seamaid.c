@@ -2,8 +2,8 @@
 
 //#define DEBUG
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_ERROR(...)				log_error(__VA_ARGS__)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_ERROR(...)				IOHUB_LOG_ERROR(__VA_ARGS__)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
 #	define LOG_ERROR(...)				do{}while(0)
@@ -54,18 +54,18 @@ void iohub_light_seamaid_send_bit(light_seamaid *aCtx, u8 aBit)
 	if (aBit)
 	{
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_High);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
 		
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_Low);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_LOW);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_LOW);
 	}
 	else
 	{
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_High);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_LOW);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_LOW);
 		
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_Low);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
 	}
 }
 
@@ -77,10 +77,10 @@ void iohub_light_seamaid_send(light_seamaid *aCtx, u16 anAddr, u8 aCmd)
 	{
 			//Header
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_High);
-		time_delay_us(DRV_LIGHT_SEAMAID_START_BIT_1);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_START_BIT_1);
 		
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_Low);
-		time_delay_us(DRV_LIGHT_SEAMAID_START_BIT_2);   
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_START_BIT_2);   
 	 
 			//Send Addr
 		for (int i = 0; i < 16; i++)
@@ -92,9 +92,9 @@ void iohub_light_seamaid_send(light_seamaid *aCtx, u16 anAddr, u8 aCmd)
 		
 			//Footer
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_High);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_Low);
-		time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);   
+		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);   
 		
 		time_delay_ms(2);
 	}
@@ -177,7 +177,7 @@ void iohub_light_seamaid_dump_timings(light_seamaid *aCtx)
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
 		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
 		
-	LOG_DEBUG("\r\n");
+	LOG_DEBUG("");
 #endif
 }
 
@@ -204,7 +204,7 @@ BOOL iohub_light_seamaid_detectPacket(digital_async_receiver_interface_ctx *aCtx
 		default:
 			if (theCtx->mTimingCount == sizeof(theCtx->mTimings)/sizeof(u16))
 			{
-				LOG_DEBUG("iohub_light_seamaid: Signal detected !\r\n");
+				LOG_DEBUG("iohub_light_seamaid: Signal detected !");
 				theCtx->mTimingReadIdx = 0;
 				return TRUE;
 			}

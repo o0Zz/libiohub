@@ -19,6 +19,7 @@ typedef struct spi_ctx_s
     u32             mCSnPin;
     u8              mSelectedCount;
 	IOHubSPIMode 	mMode;
+	void			*mCtx;
 }spi_ctx;
 
 /* -------------------------------------------------------------- */

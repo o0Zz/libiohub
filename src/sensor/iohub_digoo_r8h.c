@@ -141,7 +141,7 @@ void iohub_digoo_r8h_dump_timings(digoo_r8h *aCtx)
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
 		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
 		
-	LOG_DEBUG("\r\n");
+	LOG_DEBUG("");
 #endif
 }
 
@@ -157,7 +157,7 @@ BOOL iohub_digoo_r8h_detectPacket(digital_async_receiver_interface_ctx *aCtx, u1
 	{
 		if (theCtx->mTimingCount == sizeof(theCtx->mTimings)/sizeof(u16))
 		{
-			//LOG_DEBUG("digoo_r8h: Signal detected !\r\n");
+			//LOG_DEBUG("digoo_r8h: Signal detected !");
 			theCtx->mTimingReadIdx = 0;
 			return TRUE;
 		}

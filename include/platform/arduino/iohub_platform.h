@@ -3,9 +3,7 @@
 
 #include <Arduino.h>
 
-#define INLINE												inline
-
-INLINE void	iohub_platform_init()
+static inline void iohub_platform_init()
 {
 	//Nothing to do
 }
@@ -45,3 +43,19 @@ INLINE void	iohub_platform_init()
 
 #define iohub_interrupts_disable()								noInterrupts()
 #define iohub_interrupts_enable()								interrupts()
+
+
+static inline ret_code_t iohub_detach_interrupt(u8 pin)
+{
+    detachInterrupt(digitalPinToInterrupt(pin));
+    return SUCCESS;
+}
+
+ret_code_t iohub_attach_interrupt(u8 pin, gpio_isr_t isr_handler, gpio_int_type_t intr_type, void* arg)
+{
+	if (pin != 2 && pin != 3)
+		IOHUB_LOG_ERROR("PIN: %d, not valid for interrupt !", pin);
+
+	attachInterrupt(digitalPinToInterrupt(pin), isr_handler, intr_type);
+	return SUCCESS;
+}

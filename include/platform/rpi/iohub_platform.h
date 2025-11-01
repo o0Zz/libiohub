@@ -9,11 +9,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#define INLINE												inline
-
-INLINE void	iohub_platform_init()
+static inline void iohub_platform_init()
 {
-	ozOS_SetEnv("WIRINGPI_DEBUG", "1");
+	// Set environment variable for WiringPi debugging
+	setenv("WIRINGPI_DEBUG", "1", 1);
 	wiringPiSetup();
 }
 
@@ -43,3 +42,4 @@ static inline void iohub_set_real_time(int enable)
 	param.sched_priority = enable ? 20 : 0;
 	sched_setscheduler(0, enable ? SCHED_RR : SCHED_OTHER, &param);
 }
+

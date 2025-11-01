@@ -17,7 +17,7 @@
 
 #define LOG_UART
 #ifdef LOG_UART
-#	define LOG_UART_DEBUG(...)				log_debug(__VA_ARGS__)
+#	define LOG_UART_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
 #else
 #	define LOG_UART_DEBUG(...)				do{}while(0)
 #endif

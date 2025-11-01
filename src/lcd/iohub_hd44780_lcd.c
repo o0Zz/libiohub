@@ -144,11 +144,11 @@ int iohub_hd44780_lcd_init(hd44780_lcd_ctx *aCtx, u8 aI2CDevice)
 
         //HD44780 Initialisation. Refer you to HD44780 specification, p46
     iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
-    time_delay_us(4500); // Wait min 4.1ms
+    iohub_time_delay_us(4500); // Wait min 4.1ms
     iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
-    time_delay_us(4500); // Wait min 4.1ms
+    iohub_time_delay_us(4500); // Wait min 4.1ms
     iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
-    time_delay_us(150); // Wait min 100us
+    iohub_time_delay_us(150); // Wait min 100us
     iohub_hd44780_lcd_write_4bits(aCtx, 0x02 << 4);
 
     iohub_hd44780_lcd_write_command(aCtx, LCD_FUNCTIONSET | LCD_FUNCTIONSET_4BITMODE | LCD_FUNCTIONSET_2LINE | LCD_FUNCTIONSET_5x8DOTS);
@@ -205,7 +205,7 @@ int iohub_hd44780_lcd_home(hd44780_lcd_ctx *aCtx)
 {
     int theRet = iohub_hd44780_lcd_write_command(aCtx, LCD_RETURNHOME);
 
-    time_delay_us(2000); //This command takes a long time
+    iohub_time_delay_us(2000); //This command takes a long time
 
     return theRet;
 }
@@ -216,7 +216,7 @@ int iohub_hd44780_lcd_clear(hd44780_lcd_ctx *aCtx)
 {
     int theRet = iohub_hd44780_lcd_write_command(aCtx, LCD_CLEARDISPLAY);
 
-    time_delay_us(2000); //This command takes a long time
+    iohub_time_delay_us(2000); //This command takes a long time
 
     return theRet;
 }
@@ -296,7 +296,7 @@ int iohub_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte)
         return theRet;
 
         // Enable pulse must be >450ns
-    time_delay_us(1);
+    iohub_time_delay_us(1);
 
         // En bit low
     theRet = iohub_hd44780_lcd_write_hardware(aCtx, aByte & ~BIT_EN);
@@ -304,7 +304,7 @@ int iohub_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte)
         return theRet;
 
         // Commands need > 37us to settle
-    time_delay_us(50);
+    iohub_time_delay_us(50);
 
     return SUCCESS;
 }

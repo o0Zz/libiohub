@@ -4,10 +4,7 @@
 
 extern struct mpsse_context *gMPSSECtx;
 
-#	define INLINE												inline
-
-
-INLINE void	iohub_platform_init()
+static inline void	iohub_platform_init()
 {
 	//Nothing to do
 }

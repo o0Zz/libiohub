@@ -11,7 +11,7 @@
 
 /* -------------------------------------------------------------- */
 
-INLINE u32 iohub_time_remaining(u32 aStartTimeMs, u32 aTimeoutMs)
+static inline u32 iohub_time_remaining(u32 aStartTimeMs, u32 aTimeoutMs)
 {
     u32 theTimeElapsed = ((iohub_time_now_us()/1000) - aStartTimeMs);
 

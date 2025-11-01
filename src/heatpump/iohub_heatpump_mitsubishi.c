@@ -7,8 +7,8 @@
 //#define DEBUG
 
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_BUFFER(buf, size)		log_buffer(buf, size)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_BUFFER(buf, size)		IOHUB_LOG_BUFFER(buf, size)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
 #	define LOG_BUFFER(buf, size)		do{}while(0)

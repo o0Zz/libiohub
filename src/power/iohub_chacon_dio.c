@@ -75,9 +75,9 @@ void iohub_chacon_dio_uninit(chacon_dio *aCtx)
 void iohub_chacon_dio_send_bit(chacon_dio *aCtx, u8 aBit) 
 {
     DRV_CHACON_WRITE(PinLevel_High);
-    time_delay_us(DRV_CHACON_DIO_CLK);
+    iohub_time_delay_us(DRV_CHACON_DIO_CLK);
     DRV_CHACON_WRITE(PinLevel_Low);
-    time_delay_us(aBit ? DRV_CHACON_DIO_BIT_1 : DRV_CHACON_DIO_BIT_0);
+    iohub_time_delay_us(aBit ? DRV_CHACON_DIO_BIT_1 : DRV_CHACON_DIO_BIT_0);
 }
 
 /* ----------------------------------------------------- */
@@ -99,13 +99,13 @@ void iohub_chacon_dio_send(chacon_dio *aCtx, BOOL afON, u32 aSenderID, u8 aRecei
 	{
 			//Header
 		DRV_CHACON_WRITE(PinLevel_High);
-		time_delay_us(DRV_CHACON_DIO_CLK);
+		iohub_time_delay_us(DRV_CHACON_DIO_CLK);
 		DRV_CHACON_WRITE(PinLevel_Low);
-		time_delay_us(DRV_CHACON_DIO_HEADER_1);   
+		iohub_time_delay_us(DRV_CHACON_DIO_HEADER_1);   
 		DRV_CHACON_WRITE(PinLevel_High);
-		time_delay_us(DRV_CHACON_DIO_CLK);
+		iohub_time_delay_us(DRV_CHACON_DIO_CLK);
 		DRV_CHACON_WRITE(PinLevel_Low);
-		time_delay_us(DRV_CHACON_DIO_HEADER_2);
+		iohub_time_delay_us(DRV_CHACON_DIO_HEADER_2);
 		DRV_CHACON_WRITE(PinLevel_High);
 	 
 			//Send emitor ID
@@ -124,9 +124,9 @@ void iohub_chacon_dio_send(chacon_dio *aCtx, BOOL afON, u32 aSenderID, u8 aRecei
 	 
 			//Footer
 		DRV_CHACON_WRITE(PinLevel_High);
-		time_delay_us(DRV_CHACON_DIO_CLK);
+		iohub_time_delay_us(DRV_CHACON_DIO_CLK);
 		DRV_CHACON_WRITE(PinLevel_Low);
-		time_delay_us(DRV_CHACON_DIO_CLK);
+		iohub_time_delay_us(DRV_CHACON_DIO_CLK);
 	}
 }
 	
@@ -269,7 +269,7 @@ BOOL iohub_chacon_dio_detectPacket(digital_async_receiver_interface_ctx *aCtx, u
 		default:
 			if (theCtx->mTimingCount == sizeof(theCtx->mTimings)/sizeof(u16))
 			{
-				//LOG_DEBUG("chacon_dio: Signal detected !\r\n");
+				//LOG_DEBUG("chacon_dio: Signal detected !");
 				theCtx->mTimingReadIdx = 0;
 				return TRUE;
 			}
@@ -296,7 +296,7 @@ void iohub_chacon_dio_dump_timings(chacon_dio *aCtx)
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
 		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
 		
-	LOG_DEBUG("\r\n");
+	LOG_DEBUG("");
 #endif
 }
 

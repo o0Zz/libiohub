@@ -63,10 +63,10 @@ void iohub_heatpump_midea_mark(heatpump_midea *aCtx, u16 aTimeUs)
 {
 #if defined(USE_PWM) && USE_PWM
 	TIMER_ENABLE_PWM;
-	time_delay_us(aTimeUs);
+	iohub_time_delay_us(aTimeUs);
 #else
 	iohub_digital_write(aCtx->mDigitalPinTx, PinLevel_High);
-	time_delay_us(aTimeUs);
+	iohub_time_delay_us(aTimeUs);
 #endif
 }
 
@@ -76,10 +76,10 @@ void iohub_heatpump_midea_space(heatpump_midea *aCtx, u16 aTimeUs)
 {
 #if defined(USE_PWM) && USE_PWM
 	TIMER_DISABLE_PWM;
-	time_delay_us(aTimeUs);
+	iohub_time_delay_us(aTimeUs);
 #else
 	iohub_digital_write(aCtx->mDigitalPinTx, PinLevel_Low);
-	time_delay_us(aTimeUs);
+	iohub_time_delay_us(aTimeUs);
 #endif
 }
 

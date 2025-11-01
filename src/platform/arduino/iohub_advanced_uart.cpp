@@ -8,8 +8,8 @@
 
 //#define DEBUG_UART
 #ifdef DEBUG_UART
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_BUFFER(aBuffer, aLen)	log_buffer(aBuffer, aLen)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_BUFFER(aBuffer, aLen)	IOHUB_LOG_BUFFER(aBuffer, aLen)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
 #	define LOG_BUFFER(...)				do{}while(0)

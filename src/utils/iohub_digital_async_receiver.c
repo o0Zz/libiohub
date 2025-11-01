@@ -11,9 +11,9 @@ volatile static u32 				gDurationUs = 0;
 
 	//This function is timing dependant
 	//Do not add any log in this function or it will break the timing
-	static void digital_async_receiver_handle_interrupt()
+	static void IRAM_ATTR digital_async_receiver_handle_interrupt(void* arg)
 	{
-		u32 theTimeUs = time_now_us();
+		u32 theTimeUs = iohub_time_now_us();
 		u32 theDurationUs = theTimeUs - gDigitalReceiver->mLastTimeUs;
 		gDigitalReceiver->mLastTimeUs = theTimeUs;
 		
@@ -41,7 +41,7 @@ void iohub_digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin)
 
 	gDigitalReceiver = aCtx;
 	aCtx->mPin = aPin;
-	aCtx->mLastTimeUs = time_now_us();
+	aCtx->mLastTimeUs = iohub_time_now_us();
 	
 	iohub_digital_set_pin_mode(aPin, PinMode_Input);
 }
@@ -56,17 +56,25 @@ void iohub_digital_async_receiver_uninit(digital_async_receiver *aCtx)
 
 void iohub_digital_async_receiver_start(digital_async_receiver *aCtx)
 {
-	if (aCtx->mPin != 2 && aCtx->mPin != 3)
-		IOHUB_LOG_ERROR("PIN: %d, not valid for interrupt !", aCtx->mPin);
-
-	attachInterrupt(digitalPinToInterrupt(aCtx->mPin), digital_async_receiver_handle_interrupt, CHANGE);
+	IOHUB_LOG_INFO("Attaching interrupt to pin %d", aCtx->mPin);
+	
+	ret_code_t ret = iohub_attach_interrupt((gpio_num_t)aCtx->mPin,
+										   digital_async_receiver_handle_interrupt, 
+										   CHANGE, 
+										   NULL);
+	if (ret != SUCCESS) {
+		IOHUB_LOG_ERROR("Failed to attach interrupt to pin %d: %s", aCtx->mPin, esp_err_to_name(ret));
+	}
 }
 
 /* --------------------------------------------------- */
 
 void iohub_digital_async_receiver_stop(digital_async_receiver *aCtx)
 {
-	detachInterrupt(digitalPinToInterrupt(aCtx->mPin));
+	ret_code_t ret = iohub_detach_interrupt(aCtx->mPin);
+	if (ret != SUCCESS) {
+		IOHUB_LOG_ERROR("Failed to detach interrupt from pin %d: %s", aCtx->mPin, esp_err_to_name(ret));
+	}
 }
 
 /* --------------------------------------------------- */
@@ -100,7 +108,7 @@ BOOL iohub_digital_async_receiver_has_packet_available(digital_async_receiver *a
 			if (IOHUB_IS_BIT_SET(aCtx->mPacketReady, i))
 			{
 				*aPluginID = aCtx->mInterfaceList[i]->ID;
-				IOHUB_LOG_ERROR("Packet available: %X\r\n", *aPluginID);
+				IOHUB_LOG_ERROR("Packet available: %X", *aPluginID);
 				return TRUE;
 			}
 		}
@@ -123,7 +131,7 @@ void iohub_digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u
 		}
 	}
 	
-	IOHUB_LOG_ERROR("PluginID not found: %d\r\n", aPluginID);
+	IOHUB_LOG_ERROR("PluginID not found: %d", aPluginID);
 }
 
 /* --------------------------------------------------- */
@@ -132,6 +140,6 @@ void iohub_digital_async_receiver_real_time_dump(digital_async_receiver *aCtx)
 {
 #ifdef DEBUG
 	for(;;)
-		IOHUB_LOG_DEBUG("%lu\r\n", gDurationUs);
+		IOHUB_LOG_DEBUG("%lu", gDurationUs);
 #endif
 }

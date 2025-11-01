@@ -1,5 +1,5 @@
 ﻿#include "heater/iohub_cc1101.h"
-#include "utils/iohub_logger.h"
+#include "utils/iohub_logs.h"
 #include "utils/iohub_errors.h"
 #include "utils/iohub_time.h"
 
@@ -343,7 +343,7 @@ BOOL iohub_cc1101_wait_for_state(cc1101_ctx *aCtx, u8 aState, u32 aTimeoutMS)
 	
 /* -------------------------------------------------------------- */
 
-static INLINE void iohub_cc1101_interrupt_data_received(void) 
+static inline void iohub_cc1101_interrupt_data_received(void) 
 {
 	LOG_DEBUG_CC1101("PIN TRIGGERED!!!\n");
     //packetReceived = true;
@@ -431,7 +431,7 @@ ret_code_t iohub_cc1101_wakeup(cc1101_ctx *aCtx)
 		iohub_spi_select(&aCtx->mSPICtx); //Low
 		iohub_time_delay_us(10);
 		iohub_spi_deselect(&aCtx->mSPICtx); //High
-		time_delay_us(40);
+		iohub_time_delay_us(40);
 
 		setIdleState(aCtx);
 		flushRxFifo(aCtx);

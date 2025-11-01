@@ -1,5 +1,4 @@
 #include "sensor/iohub_rs8706w_weatherlink.h"
-#include "utils/iohub_logger.h"
 
 //#define DEBUG
 #ifdef DEBUG
@@ -115,7 +114,7 @@ BOOL iohub_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherli
 	u8 theCRCComputed = iohub_rs8706w_weatherlink_crc(aCtx, theBuffer);
     if ((theCRCComputed & 0x0F) != (theCRC & 0x0F))
     {
-		LOG_DEBUG("INVALID CRC: Expected: %X, Got: %X\r\n", theCRCComputed & 0x0F, theCRC & 0x0F);
+		LOG_DEBUG("INVALID CRC: Expected: %X, Got: %X", theCRCComputed & 0x0F, theCRC & 0x0F);
 		return FALSE;
 	}
 	*/
@@ -136,7 +135,7 @@ void iohub_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx)
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
 		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
 		
-	LOG_DEBUG("\r\n");
+	LOG_DEBUG("");
 #endif
 }
 
@@ -160,7 +159,7 @@ BOOL iohub_rs8706w_weatherlink_detectPacket(digital_async_receiver_interface_ctx
 			{
 				if (theCtx->mTimingCount == sizeof(theCtx->mTimings)/sizeof(u16))
 				{
-					//LOG_DEBUG("rs8706w_weatherlink: Signal detected !\r\n");
+					//LOG_DEBUG("rs8706w_weatherlink: Signal detected !");
 					theCtx->mTimingReadIdx = 0;
 					return TRUE;
 				}

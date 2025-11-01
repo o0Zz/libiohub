@@ -1,12 +1,10 @@
 #include "meter/iohub_linky_info.h"
-#include "utils/iohub_logger.h"
-
 
 //https://github.com/jaysee/teleInfo
 
 #define LOG_LINKY
 #ifdef LOG_LINKY
-#	define LOG_LINKY_DEBUG(...)				log_debug(__VA_ARGS__)
+#	define LOG_LINKY_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
 #else
 #	define LOG_LINKY_DEBUG(...)				do{}while(0)
 #endif
@@ -100,12 +98,12 @@ void iohub_linky_info_uninit(linky_info *aCtx)
 					if (crc_computed == crc_read)
 						return aCtx->mLine;
 				
-					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)\n", aCtx->mLine, crc_read, crc_computed);
+					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)", aCtx->mLine, crc_read, crc_computed);
 				}
 				else
 				{
 					aCtx->mLineIdx = 0;
-					IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)\n");
+					IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)");
 				}
 			}
 		}
