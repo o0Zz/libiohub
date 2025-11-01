@@ -87,7 +87,7 @@ In your ino file:
 #include "iohub.h"
 ```
 
-Then start using any library
+Then start using it
 
 
 ## 🧱 Adding a New Driver
@@ -96,18 +96,9 @@ Create a new header and source file under the appropriate module (e.g. include/c
 
 Implement the iohub_climate_driver_t interface
 
-Register the driver in climate.c
-
-Add an example under examples/climate/
-
 ## 🧰 Supported Platforms
-Platform	SPI	I²C	UART	Notes
-ESP32	✅	✅	✅	Uses ESP-IDF HAL
-Arduino	✅	✅	✅	Standard Arduino APIs
-Raspberry Pi	✅	✅	✅	Uses WiringPi / BCM2835
-
-## 💬 Contributing
-
-Contributions are welcome!
-If you’d like to add a new platform or driver, please open an issue or pull request.
-
+|Platform    |SPI|I²C|UART|Notes|
+|------------|---|---|----|-----|
+|ESP32       |✅ |✅  |✅  |Uses ESP-IDF HAL|
+|Arduino     |✅ |✅  |✅  |Standard Arduino APIs|
+|Raspberry Pi|✅ |✅  |✅  |Uses WiringPi / BCM2835|
