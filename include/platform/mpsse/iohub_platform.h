@@ -4,6 +4,8 @@
 
 extern struct mpsse_context *gMPSSECtx;
 
+#define IRAM_ATTR
+
 static inline void	iohub_platform_init()
 {
 	//Nothing to do

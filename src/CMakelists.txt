@@ -1,71 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
 
+include(${CMAKE_CURRENT_LIST_DIR}/../cmake/common.cmake)
+
 option(IOHUB_PLATFORM "Select the IOHUB platform")
 
-# Require user to define IOHUB_PLATFORM at configure time
+# Require user to define IOHUB_PLATFORM
 if(NOT IOHUB_PLATFORM OR IOHUB_PLATFORM STREQUAL "")
     message(FATAL_ERROR "You must define IOHUB_PLATFORM (e.g. -DIOHUB_PLATFORM=ESP32, ARDUINO, RPI, MPSSE)")
 endif()
 
-# Convert to uppercase for consistency
-string(TOUPPER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_UPPER)
-string(TOLOWER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_LOWER)
+message(STATUS "Building libiohub for platform: ${IOHUB_PLATFORM}")
 
-message(STATUS "Building libiohub for platform: ${IOHUB_PLATFORM_UPPER}")
+# Get platform sources and create library
+get_iohub_sources(${CMAKE_CURRENT_LIST_DIR}/.. ${IOHUB_PLATFORM} IOHUB_SOURCES)
+add_library(iohub STATIC ${IOHUB_SOURCES})
 
-# Collect all common (platform-agnostic) sources
-file(GLOB_RECURSE IOHUB_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/*.c
-)
-
-# Exclude platform-specific folders from the generic sources
-list(FILTER IOHUB_SRC EXCLUDE REGEX ".*/platform/.*")
-
-# Add platform-specific sources
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/platform/${IOHUB_PLATFORM_LOWER}")
-    file(GLOB_RECURSE IOHUB_PLATFORM_SRC
-        ${CMAKE_CURRENT_SOURCE_DIR}/platform/${IOHUB_PLATFORM_LOWER}/*.c
-    )
-    list(APPEND IOHUB_SRC ${IOHUB_PLATFORM_SRC})
-else()
-    message(FATAL_ERROR "Unknown platform: ${IOHUB_PLATFORM} (no matching folder in ${CMAKE_CURRENT_SOURCE_DIR}/platform/)")
-endif()
-
-# Create static library target
-add_library(iohub STATIC ${IOHUB_SRC})
-
-# Add include directories
-target_include_directories(iohub
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-)
-
-# Set C standard (since you're compiling .c files)
-set_property(TARGET iohub PROPERTY C_STANDARD 11)
-set_property(TARGET iohub PROPERTY C_STANDARD_REQUIRED ON)
-
-# Define platform macro for conditional compilation
-target_compile_definitions(iohub
-    PUBLIC
-        IOHUB_PLATFORM_${IOHUB_PLATFORM_UPPER}=1
-)
-
-# Platform-specific configurations
-if(IOHUB_PLATFORM_UPPER STREQUAL "ESP32")
-    # For ESP-IDF builds, we need to integrate with the ESP-IDF component system
-    if(IDF_TARGET)
-        # ESP-IDF build system detected
-        # Link with ESP-IDF I2C driver component
-        target_link_libraries(iohub
-            PRIVATE
-                driver
-                esp_common
-        )
-        
-        # Add ESP-IDF specific compile definitions
-        target_compile_definitions(iohub
-            PRIVATE
-                ESP_PLATFORM=1
-        )
-    endif()
-endif()
+# Configure target
+target_include_directories(iohub PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+configure_iohub_target(iohub ${IOHUB_PLATFORM})
