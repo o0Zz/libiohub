@@ -1,8 +1,8 @@
 #ifndef _DRV_SAUTER_H_
 #define _DRV_SAUTER_H_
 
-#include "drivers/drv_common.h"
-#include "drivers/drv_cc1101.h"
+#include "utils/iohub_types.h"
+#include "heater/iohub_cc1101.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,12 +18,12 @@ typedef struct sauter_heater_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t								drv_sauter_heater_init(sauter_heater *aCtx, cc1101_ctx *aCC1101);
-void    								drv_sauter_heater_uninit(sauter_heater *aCtx);
+ret_code_t								iohub_sauter_heater_init(sauter_heater *aCtx, cc1101_ctx *aCC1101);
+void    								iohub_sauter_heater_uninit(sauter_heater *aCtx);
 
-ret_code_t			 					drv_sauter_heater_send(sauter_heater *aCtx, BOOL afOn, float aTemperature, float aBoostTimeMinute);
-ret_code_t 								drv_sauter_heater_read(sauter_heater *aCtx, BOOL *afOn, float *aTemperature, float *aBoostTimeMinute);
-u8 										drv_sauter_heater_crc(u8 *aBuffer, u16 aBufferSize);
+ret_code_t			 					iohub_sauter_heater_send(sauter_heater *aCtx, BOOL afOn, float aTemperature, float aBoostTimeMinute);
+ret_code_t 								iohub_sauter_heater_read(sauter_heater *aCtx, BOOL *afOn, float *aTemperature, float *aBoostTimeMinute);
+u8 										iohub_sauter_heater_crc(u8 *aBuffer, u16 aBufferSize);
 
 #ifdef __cplusplus
 }

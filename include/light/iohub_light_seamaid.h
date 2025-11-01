@@ -1,7 +1,7 @@
 #ifndef _DRV_LIGHT_SEAMAID_H_
 #define _DRV_LIGHT_SEAMAID_H_
 
-#include "drivers/drv_common.h"
+#include "utils/iohub_types.h"
 #include "components/digital_async_receiver/digital_async_receiver.h"
 
 #ifdef __cplusplus
@@ -43,16 +43,16 @@ typedef struct light_seamaid_s
 
 //anAddr = 0x800E
 
-int     								drv_light_seamaid_init(light_seamaid *aCtx, u8 aGPIOTx);
-void    								drv_light_seamaid_uninit(light_seamaid *aCtx);
+int     								iohub_light_seamaid_init(light_seamaid *aCtx, u8 aGPIOTx);
+void    								iohub_light_seamaid_uninit(light_seamaid *aCtx);
 
-void 									drv_light_seamaid_send(light_seamaid *aCtx, u16 anAddr, u8 aCmd);
+void 									iohub_light_seamaid_send(light_seamaid *aCtx, u16 anAddr, u8 aCmd);
 
-BOOL    								drv_light_seamaid_read(light_seamaid *aCtx, u16 *anAddr, u8 *aCmd);
+BOOL    								iohub_light_seamaid_read(light_seamaid *aCtx, u16 *anAddr, u8 *aCmd);
 
-const digital_async_receiver_interface 	*drv_light_seamaid_get_interface(void);
+const digital_async_receiver_interface 	*iohub_light_seamaid_get_interface(void);
 
-void 									drv_light_seamaid_dump_timings(light_seamaid *aCtx);
+void 									iohub_light_seamaid_dump_timings(light_seamaid *aCtx);
 
 #ifdef __cplusplus
 }

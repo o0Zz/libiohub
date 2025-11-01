@@ -1,5 +1,4 @@
-#ifndef _ERRORS_H_
-#define _ERRORS_H_
+#pragma once
 
 #define SUCCESS                     0
 #define E_DEVICE_NOT_FOUND          -1
@@ -18,5 +17,3 @@
 #define E_INVALID_STATE		        -14
 #define E_INVALID_NOT_CONNECTED     -15
 #define E_INVALID_REPLY             -16
-
-#endif

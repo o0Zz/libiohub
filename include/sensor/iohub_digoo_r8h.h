@@ -1,8 +1,8 @@
 #ifndef _DRV_DIGOO_R8H_H_
 #define _DRV_DIGOO_R8H_H_
 
-#include "drivers/drv_common.h"
-#include "components/digital_async_receiver/digital_async_receiver.h"
+#include "utils/iohub_types.h"
+#include "utils/iohub_digital_async_receiver.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,14 +21,14 @@ typedef struct digoo_r8h_s
 
 /* -------------------------------------------------------------- */
 
-int     								drv_digoo_r8h_init(digoo_r8h *aCtx);
-void    								drv_digoo_r8h_uninit(digoo_r8h *aCtx);
+int     								iohub_digoo_r8h_init(digoo_r8h *aCtx);
+void    								iohub_digoo_r8h_uninit(digoo_r8h *aCtx);
 
-BOOL    								drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *aTemperature, u8 *anHumidity);
+BOOL    								iohub_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *aTemperature, u8 *anHumidity);
 
-const digital_async_receiver_interface 	*drv_digoo_r8h_get_interface(void);
+const digital_async_receiver_interface 	*iohub_digoo_r8h_get_interface(void);
 
-void 									drv_digoo_r8h_dump_timings(digoo_r8h *aCtx);
+void 									iohub_digoo_r8h_dump_timings(digoo_r8h *aCtx);
 
 #ifdef __cplusplus
 }

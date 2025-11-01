@@ -1,0 +1,49 @@
+cmake_minimum_required(VERSION 3.10)
+
+# Require user to define IOHUB_PLATFORM at configure time
+if(NOT DEFINED IOHUB_PLATFORM)
+    message(FATAL_ERROR "You must define IOHUB_PLATFORM (e.g. -DIOHUB_PLATFORM=ESP32, ARDUINO, RPI, MPSSE)")
+endif()
+
+# Convert to uppercase for consistency
+string(TOUPPER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_UPPER)
+string(TOLOWER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_LOWER)
+
+message(STATUS "Building libiohub for platform: ${IOHUB_PLATFORM_UPPER}")
+
+# Collect all common (platform-agnostic) sources
+file(GLOB_RECURSE IOHUB_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.c
+)
+
+# Exclude platform-specific folders from the generic sources
+list(FILTER IOHUB_SRC EXCLUDE REGEX ".*/platform/.*")
+
+# Add platform-specific sources
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/platform/${IOHUB_PLATFORM_LOWER}")
+    file(GLOB_RECURSE IOHUB_PLATFORM_SRC
+        ${CMAKE_CURRENT_SOURCE_DIR}/platform/${IOHUB_PLATFORM_LOWER}/*.c
+    )
+    list(APPEND IOHUB_SRC ${IOHUB_PLATFORM_SRC})
+else()
+    message(FATAL_ERROR "Unknown platform: ${IOHUB_PLATFORM} (no matching folder in /platforms)")
+endif()
+
+# Create static library target
+add_library(iohub STATIC ${IOHUB_SRC})
+
+# Add include directories
+target_include_directories(iohub
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include
+)
+
+# Set C standard (since you're compiling .c files)
+set_property(TARGET iohub PROPERTY C_STANDARD 11)
+set_property(TARGET iohub PROPERTY C_STANDARD_REQUIRED ON)
+
+# Define platform macro for conditional compilation
+target_compile_definitions(iohub
+    PUBLIC
+        IOHUB_PLATFORM_${IOHUB_PLATFORM_UPPER}=1
+)

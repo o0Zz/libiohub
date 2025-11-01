@@ -1,10 +1,10 @@
-#include "drv_rs8706w_weatherlink.h"
-#include <string.h>
+#include "sensor/iohub_rs8706w_weatherlink.h"
+#include "utils/iohub_logger.h"
 
 //#define DEBUG
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_ERROR(...)				log_error(__VA_ARGS__)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_ERROR(...)				IOHUB_LOG_ERROR(__VA_ARGS__)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
 #	define LOG_ERROR(...)				do{}while(0)
@@ -20,7 +20,7 @@
 
 /* ------------------------------------------------------------------ */
 
-	static u8 drv_rs8706w_weatherlink_crc(rs8706w_weatherlink *aCtx, u32 aBuffer)
+	static u8 iohub_rs8706w_weatherlink_crc(rs8706w_weatherlink *aCtx, u32 aBuffer)
 	{
 		u8 theResult = 0;
 		for (int i=0; i<8; i++)
@@ -31,7 +31,7 @@
 	
 /* ----------------------------------------------------- */
 
-static u16 drv_rs8706w_weatherlink_read_timing(rs8706w_weatherlink *aCtx) 
+static u16 iohub_rs8706w_weatherlink_read_timing(rs8706w_weatherlink *aCtx) 
 {
 	//LOG_DEBUG("%d, ", aCtx->mTimings[aCtx->mTimingReadIdx]);
 	return aCtx->mTimings[aCtx->mTimingReadIdx++];
@@ -39,7 +39,7 @@ static u16 drv_rs8706w_weatherlink_read_timing(rs8706w_weatherlink *aCtx)
 
 /* ------------------------------------------------------------------ */
 
-int drv_rs8706w_weatherlink_init(rs8706w_weatherlink *aCtx)
+int iohub_rs8706w_weatherlink_init(rs8706w_weatherlink *aCtx)
 {
     int theRet = SUCCESS;
 
@@ -50,22 +50,22 @@ int drv_rs8706w_weatherlink_init(rs8706w_weatherlink *aCtx)
 
 /* ------------------------------------------------------------------ */
 
-void drv_rs8706w_weatherlink_uninit(rs8706w_weatherlink *aCtx)
+void iohub_rs8706w_weatherlink_uninit(rs8706w_weatherlink *aCtx)
 {
 }
 
 /* ----------------------------------------------------- */
 
-BOOL drv_rs8706w_weatherlink_read_bit(rs8706w_weatherlink *aCtx, u8 *aBit) 
+BOOL iohub_rs8706w_weatherlink_read_bit(rs8706w_weatherlink *aCtx, u8 *aBit) 
 {
 	BOOL theRet = FALSE;
     u32 theTimeMs;
 
-	theTimeMs = drv_rs8706w_weatherlink_read_timing(aCtx);
+	theTimeMs = iohub_rs8706w_weatherlink_read_timing(aCtx);
 	if (!IS_EXPECTED_TIME(theTimeMs, DRV_RS8706_WEATHERLINK_CLK, DRV_RS8706_WEATHERLINK_RECV_ACCURACY))
 		return FALSE;
 
-	theTimeMs = drv_rs8706w_weatherlink_read_timing(aCtx);
+	theTimeMs = iohub_rs8706w_weatherlink_read_timing(aCtx);
     if (IS_EXPECTED_TIME(theTimeMs, DRV_RS8706_WEATHERLINK_BIT_0, DRV_RS8706_WEATHERLINK_RECV_ACCURACY))
     {
         *aBit = 0;
@@ -85,17 +85,17 @@ BOOL drv_rs8706w_weatherlink_read_bit(rs8706w_weatherlink *aCtx, u8 *aBit)
 
 /* ------------------------------------------------------------------ */
 
-BOOL drv_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink_data *anOutputData)
+BOOL iohub_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink_data *anOutputData)
 {
 	u8 theBit;
     u32 theBuffer = 0;
 	u8 theCRC = 0;
 
-	drv_rs8706w_weatherlink_read_timing(aCtx); //DRV_RS8706_WEATHERLINK_LOCK
+	iohub_rs8706w_weatherlink_read_timing(aCtx); //DRV_RS8706_WEATHERLINK_LOCK
 
     for (u8 i=0; i<32; i++)
     {
-		if (!drv_rs8706w_weatherlink_read_bit(aCtx, &theBit))
+		if (!iohub_rs8706w_weatherlink_read_bit(aCtx, &theBit))
 			return FALSE;
 		
 		theBuffer <<= 1;
@@ -104,7 +104,7 @@ BOOL drv_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink
 	
 	for (u8 i=0; i<5; i++)
     {
-		if (!drv_rs8706w_weatherlink_read_bit(aCtx, &theBit))
+		if (!iohub_rs8706w_weatherlink_read_bit(aCtx, &theBit))
 			return FALSE;
 		
 		theCRC <<= 1;
@@ -112,7 +112,7 @@ BOOL drv_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink
     }
 	
     /*
-	u8 theCRCComputed = drv_rs8706w_weatherlink_crc(aCtx, theBuffer);
+	u8 theCRCComputed = iohub_rs8706w_weatherlink_crc(aCtx, theBuffer);
     if ((theCRCComputed & 0x0F) != (theCRC & 0x0F))
     {
 		LOG_DEBUG("INVALID CRC: Expected: %X, Got: %X\r\n", theCRCComputed & 0x0F, theCRC & 0x0F);
@@ -130,7 +130,7 @@ BOOL drv_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink
 
 /* ----------------------------------------------------- */
 
-void drv_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx)
+void iohub_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx)
 {
 #ifdef DEBUG
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
@@ -142,7 +142,7 @@ void drv_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx)
 
 /* ----------------------------------------------------- */
 
-BOOL drv_rs8706w_weatherlink_detectPacket(digital_async_receiver_interface_ctx *aCtx, u32 aDurationUs)
+BOOL iohub_rs8706w_weatherlink_detectPacket(digital_async_receiver_interface_ctx *aCtx, u16 aDurationUs)
 {
 	rs8706w_weatherlink *theCtx = (rs8706w_weatherlink *)aCtx;
 	
@@ -177,7 +177,7 @@ BOOL drv_rs8706w_weatherlink_detectPacket(digital_async_receiver_interface_ctx *
 
 /* ----------------------------------------------------- */
 
-void drv_rs8706w_weatherlink_packetHandled(digital_async_receiver_interface_ctx *aCtx)
+void iohub_rs8706w_weatherlink_packetHandled(digital_async_receiver_interface_ctx *aCtx)
 {
 	rs8706w_weatherlink *theCtx = (rs8706w_weatherlink *)aCtx;
 	
@@ -186,13 +186,13 @@ void drv_rs8706w_weatherlink_packetHandled(digital_async_receiver_interface_ctx 
 
 /* ----------------------------------------------------- */
 
-const digital_async_receiver_interface  *drv_rs8706w_weatherlink_get_interface(void)
+const digital_async_receiver_interface  *iohub_rs8706w_weatherlink_get_interface(void)
 {
 	static const digital_async_receiver_interface sInterface = 
 	{
 		DRV_RS8706W_ID,
-		drv_rs8706w_weatherlink_detectPacket,
-		drv_rs8706w_weatherlink_packetHandled
+		iohub_rs8706w_weatherlink_detectPacket,
+		iohub_rs8706w_weatherlink_packetHandled
 	};
 	
 	return &sInterface;

@@ -35,8 +35,8 @@ PINOUT CC1101 868: https://quadmeup.com/wp-content/uploads/2017/12/CC1101-868mhz
 	GND		| 2 (Gnd)
 */
 
-#include "drivers/drv_common.h"
-#include "board/drv_spi.h"
+#include "utils/iohub_types.h"
+#include "platform/iohub_spi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,18 +69,18 @@ typedef struct cc1101_ctx_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t     	drv_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, uint8_t aDefaultConfig[], uint8_t aFirstBytePaTable);
-void    		drv_cc1101_uninit(cc1101_ctx *aCtx);
+ret_code_t     	iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, uint8_t aDefaultConfig[], uint8_t aFirstBytePaTable);
+void    		iohub_cc1101_uninit(cc1101_ctx *aCtx);
 
-ret_code_t 		drv_cc1101_wakeup(cc1101_ctx *aCtx);
-ret_code_t 		drv_cc1101_standby(cc1101_ctx *aCtx);
+ret_code_t 		iohub_cc1101_wakeup(cc1101_ctx *aCtx);
+ret_code_t 		iohub_cc1101_standby(cc1101_ctx *aCtx);
 
-ret_code_t     	drv_cc1101_send_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacket);
+ret_code_t     	iohub_cc1101_send_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacket);
 
-ret_code_t		drv_cc1101_set_receive(cc1101_ctx *aCtx);
-ret_code_t     	drv_cc1101_receive_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacket);
+ret_code_t		iohub_cc1101_set_receive(cc1101_ctx *aCtx);
+ret_code_t     	iohub_cc1101_receive_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacket);
 
-BOOL 			drv_cc1101_is_data_available(cc1101_ctx *aCtx);
+BOOL 			iohub_cc1101_is_data_available(cc1101_ctx *aCtx);
 
 #ifdef __cplusplus
 }

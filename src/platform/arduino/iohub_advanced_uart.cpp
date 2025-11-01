@@ -1,4 +1,4 @@
-#include <board/drv_uart.h>
+#include "platform/iohub_uart.h"
 
 #ifndef ARDUINO_UART_CUSTOM
 #	define ARDUINO_UART_CUSTOM	1
@@ -670,7 +670,7 @@ uint8_t CustomSoftwareSerial::calculateNumberOfBits1(uint8_t sentData) {
 
 /******************************************************************************
 *
-*									drv_uart  
+*									iohub_uart  
 *
 ******************************************************************************/
 
@@ -678,7 +678,7 @@ static CustomSoftwareSerial sSerial;
 
 /* ------------------------------------------------------------- */
 
-ret_code_t drv_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
+ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
 {
 	sSerial.setTX(aTxPin);
 	sSerial.setRX(aRxPin);
@@ -687,7 +687,7 @@ ret_code_t drv_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u1
 
 /* ------------------------------------------------------------- */
 
-ret_code_t drv_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
+ret_code_t iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 {
 	u16 theIdx = 0;
 	
@@ -700,7 +700,7 @@ ret_code_t drv_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 
 /* ------------------------------------------------------------- */
 
-ret_code_t drv_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
+ret_code_t iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
 {
 	if ( sSerial.write(aBuffer, aSize) == aSize )
 		return SUCCESS;
@@ -710,7 +710,7 @@ ret_code_t drv_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
 
 /* ------------------------------------------------------------- */
 
-void drv_uart_close(uart_ctx *aCtx)
+void iohub_uart_close(uart_ctx *aCtx)
 {
 	sSerial.end();
 }

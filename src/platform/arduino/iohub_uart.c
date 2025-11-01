@@ -1,4 +1,4 @@
-#include <board/drv_uart.h>
+#include <platform/iohub_uart.h>
 
 
 //IMPORTANT: This implementation don't support parity bit, stop bits and number of data bits (Only works for 8N1)
@@ -24,7 +24,7 @@
 
 static SoftwareSerial *sSerial = NULL;
 
-ret_code_t drv_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
+ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
 {
 	memset(aCtx, 0x00, sizeof(aCtx));
 	
@@ -43,21 +43,21 @@ ret_code_t drv_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u1
 
 /* ------------------------------------------------------------- */
 
-u16 drv_uart_data_available(uart_ctx *aCtx)
+u16 iohub_uart_data_available(uart_ctx *aCtx)
 {
 	return sSerial->available();
 }
 
 /* ------------------------------------------------------------- */
 
-u8 drv_uart_read_byte(uart_ctx *aCtx)
+u8 iohub_uart_read_byte(uart_ctx *aCtx)
 {
 	return sSerial->read();
 }
 
 /* ------------------------------------------------------------- */
 
-ret_code_t drv_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
+ret_code_t iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 {
 	u16 theIdx = 0;
 	
@@ -70,7 +70,7 @@ ret_code_t drv_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 
 /* ------------------------------------------------------------- */
 
-ret_code_t drv_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
+ret_code_t iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
 {
 	for (u16 i=0; i<aSize; i++)
 		sSerial->write(aBuffer[i]);
@@ -80,7 +80,7 @@ ret_code_t drv_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
 
 /* ------------------------------------------------------------- */
 
-void drv_uart_close(uart_ctx *aCtx)
+void iohub_uart_close(uart_ctx *aCtx)
 {
 	delete sSerial;
 	sSerial = NULL;

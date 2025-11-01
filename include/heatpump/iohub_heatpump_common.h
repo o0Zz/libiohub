@@ -1,5 +1,4 @@
-#ifndef _HEATPUMP_COMMON_H_
-#define _HEATPUMP_COMMON_H_
+#pragma once
 
 typedef enum
 {
@@ -12,7 +11,7 @@ typedef enum
 	HeatpumpMode_Heat,
 	
 	HeatpumpMode_Count
-}HeatpumpMode;
+}IoHubHeatpumpMode;
 
 typedef enum
 {
@@ -23,13 +22,11 @@ typedef enum
 	HeatpumpFanSpeed_Low,
 	
 	HeatpumpFanSpeed_Count
-}HeatpumpFanSpeed;
+}IoHubHeatpumpFanSpeed;
 
 typedef enum
 {
 	HeatpumpAction_OFF = 0,
 	HeatpumpAction_ON,
 	HeatpumpAction_Direction,
-}HeatpumpAction;
-
-#endif
+}IoHubHeatpumpAction;

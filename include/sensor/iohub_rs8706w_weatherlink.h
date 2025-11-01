@@ -1,8 +1,6 @@
-#ifndef _DRV_RS8706W_WEATHERLINK_H_
-#define _DRV_RS8706W_WEATHERLINK_H_
+#pragma once
 
-#include "drivers/drv_common.h"
-#include "components/digital_async_receiver/digital_async_receiver.h"
+#include "utils/iohub_digital_async_receiver.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,18 +26,16 @@ typedef struct rs8706w_weatherlink_s
 
 /* -------------------------------------------------------------- */
 
-int 									drv_rs8706w_weatherlink_init(rs8706w_weatherlink *aCtx);
+int 									iohub_rs8706w_weatherlink_init(rs8706w_weatherlink *aCtx);
 
-void 									drv_rs8706w_weatherlink_uninit(rs8706w_weatherlink *aCtx);
+void 									iohub_rs8706w_weatherlink_uninit(rs8706w_weatherlink *aCtx);
 
-BOOL 									drv_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink_data *anOutputData);
+BOOL 									iohub_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherlink_data *anOutputData);
 
-const digital_async_receiver_interface 	*drv_rs8706w_weatherlink_get_interface(void);
+const digital_async_receiver_interface 	*iohub_rs8706w_weatherlink_get_interface(void);
 
-void 									drv_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx);
+void 									iohub_rs8706w_weatherlink_dump_timings(rs8706w_weatherlink *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

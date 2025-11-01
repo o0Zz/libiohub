@@ -1,5 +1,5 @@
-#include "components/digital_async_receiver/digital_async_receiver.h"
-#include "board/board.h"
+#include "utils/iohub_digital_async_receiver.h"
+#include "platform/iohub_platform.h"
 
 static digital_async_receiver		*gDigitalReceiver = NULL;
 
@@ -9,8 +9,8 @@ volatile static u32 				gDurationUs = 0;
 
 /* --------------------------------------------------- */
 
-		// /!\ Do not add any log in this function /!\ 
-		
+	//This function is timing dependant
+	//Do not add any log in this function or it will break the timing
 	static void digital_async_receiver_handle_interrupt()
 	{
 		u32 theTimeUs = time_now_us();
@@ -25,7 +25,7 @@ volatile static u32 				gDurationUs = 0;
 		{
 			if (!IS_BIT_SET(gDigitalReceiver->mPacketReady, i))
 			{
-				if (gDigitalReceiver->mInterfaceList[i]->detectPacket(gDigitalReceiver->mInterfaceCtx[i], theDurationUs))
+				if (gDigitalReceiver->mInterfaceList[i]->detectPacket(gDigitalReceiver->mInterfaceCtx[i], (u16)theDurationUs))
 				{
 					BIT_SET(gDigitalReceiver->mPacketReady, i);
 				}
@@ -35,7 +35,7 @@ volatile static u32 				gDurationUs = 0;
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin)
+void iohub_digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin)
 {
 	memset(aCtx, 0x00, sizeof(digital_async_receiver));
 
@@ -43,35 +43,35 @@ void digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin)
 	aCtx->mPin = aPin;
 	aCtx->mLastTimeUs = time_now_us();
 	
-	drv_digital_set_pin_mode(aPin, PinMode_Input);
+	iohub_digital_set_pin_mode(aPin, PinMode_Input);
 }
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_uninit(digital_async_receiver *aCtx)
+void iohub_digital_async_receiver_uninit(digital_async_receiver *aCtx)
 {
 }
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_start(digital_async_receiver *aCtx)
+void iohub_digital_async_receiver_start(digital_async_receiver *aCtx)
 {
 	if (aCtx->mPin != 2 && aCtx->mPin != 3)
-		LOG_ERROR("PIN: %d, not valid for interrupt !", aCtx->mPin);
+		IOHUB_LOG_ERROR("PIN: %d, not valid for interrupt !", aCtx->mPin);
 
 	attachInterrupt(digitalPinToInterrupt(aCtx->mPin), digital_async_receiver_handle_interrupt, CHANGE);
 }
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_stop(digital_async_receiver *aCtx)
+void iohub_digital_async_receiver_stop(digital_async_receiver *aCtx)
 {
 	detachInterrupt(digitalPinToInterrupt(aCtx->mPin));
 }
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_register_plugin(digital_async_receiver *aCtx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx)
+void iohub_digital_async_receiver_register_plugin(digital_async_receiver *aCtx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx)
 {
 	aCtx->mInterfaceList[aCtx->mPluginCount] = anInterface;
 	aCtx->mInterfaceCtx[aCtx->mPluginCount] = anInterfaceCtx;
@@ -80,27 +80,27 @@ void digital_async_receiver_register_plugin(digital_async_receiver *aCtx, const 
 
 /* --------------------------------------------------- */
 
-u16 digital_async_receiver_wait_for_packet(digital_async_receiver *aCtx)
+u16 iohub_digital_async_receiver_wait_for_packet(digital_async_receiver *aCtx)
 {
 	u16 thePluginID = 0;
-	
-	while(!digital_async_receiver_has_packet_available(aCtx, &thePluginID));
-	
+
+	while(!iohub_digital_async_receiver_has_packet_available(aCtx, &thePluginID));
+
 	return thePluginID;
 }
 
 /* --------------------------------------------------- */
 
-BOOL digital_async_receiver_has_packet_available(digital_async_receiver *aCtx, u16 *aPluginID)
+BOOL iohub_digital_async_receiver_has_packet_available(digital_async_receiver *aCtx, u16 *aPluginID)
 {
 	if (aCtx->mPacketReady)
 	{	
 		for (u8 i=0; i<(sizeof(aCtx->mPacketReady) * 8); i++)
 		{
-			if (IS_BIT_SET(aCtx->mPacketReady, i))
+			if (IOHUB_IS_BIT_SET(aCtx->mPacketReady, i))
 			{
 				*aPluginID = aCtx->mInterfaceList[i]->ID;
-				LOG_ERROR("Packet available: %X\r\n", *aPluginID);
+				IOHUB_LOG_ERROR("Packet available: %X\r\n", *aPluginID);
 				return TRUE;
 			}
 		}
@@ -111,27 +111,27 @@ BOOL digital_async_receiver_has_packet_available(digital_async_receiver *aCtx, u
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u16 aPluginID)
+void iohub_digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u16 aPluginID)
 {
 	for(u8 i=0; i<gDigitalReceiver->mPluginCount; i++)
 	{
 		if (aCtx->mInterfaceList[i]->ID == aPluginID)
 		{
 			aCtx->mInterfaceList[i]->packetHandled(aCtx->mInterfaceCtx[i]);
-			BIT_CLEAR(aCtx->mPacketReady, i);
+			IOHUB_BIT_CLEAR(aCtx->mPacketReady, i);
 			return;
 		}
 	}
 	
-	LOG_ERROR("PluginID not found: %d\r\n", aPluginID);
+	IOHUB_LOG_ERROR("PluginID not found: %d\r\n", aPluginID);
 }
 
 /* --------------------------------------------------- */
 
-void digital_async_receiver_real_time_dump(digital_async_receiver *aCtx)
+void iohub_digital_async_receiver_real_time_dump(digital_async_receiver *aCtx)
 {
 #ifdef DEBUG
 	for(;;)
-		LOG_DEBUG("%lu\r\n", gDurationUs);
+		IOHUB_LOG_DEBUG("%lu\r\n", gDurationUs);
 #endif
 }

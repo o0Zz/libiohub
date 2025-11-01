@@ -1,47 +1,25 @@
-#ifndef _BOARD_H_
-#define _BOARD_H_
+#pragma once
 
 typedef enum 
 {
     PinMode_Output,
     PinMode_Input
-}PinMode;
+}IOHubPinMode;
 
 typedef enum 
 {
     PinLevel_Low = 0,
     PinLevel_High
-}PinLevel;
+}IOHubPinLevel;
 
-#if defined (ARDUINO)
-	#include "board/arduino/board.h"
-#elif defined (RASPBERRY)
-	#include "board/rpi/board.h"
-#elif defined (MPSSE)
-	#include "board/mpsse/board.h"
+#if defined(IOHUB_PLATFORM_ARDUINO)
+	#include "platform/arduino/iohub_platform.h"
+#elif defined(IOHUB_PLATFORM_RPI)
+	#include "platform/rpi/iohub_platform.h"
+#elif defined(IOHUB_PLATFORM_MPSSE)
+	#include "platform/mpsse/iohub_platform.h"
 #endif
 
-#include "board/drv_i2c.h"
-#include "board/drv_spi.h"
-#include "board/drv_uart.h"
-
-//#define DEBUG
-#ifdef DEBUG
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_BUFFER(aBuffer, aSize)	log_buffer(aBuffer, aSize)
-#	define LOG_ERROR(...)				log_error(__VA_ARGS__)
-#else
-#	define LOG_DEBUG(...)				do{}while(0)
-#	define LOG_BUFFER(aBuffer, aSize)	do{}while(0)
-#	define LOG_ERROR(...)				do{}while(0)
-#endif
-
-#ifndef MIN
-# 	define MIN(x, y) ((x)<(y)?(x):(y))
-#endif
-
-#ifndef MAX
-# 	define MAX(x, y) ((x)>(y)?(x):(y))
-#endif
-
-#endif
+#include "platform/iohub_i2c.h"
+#include "platform/iohub_spi.h"
+#include "platform/iohub_uart.h"

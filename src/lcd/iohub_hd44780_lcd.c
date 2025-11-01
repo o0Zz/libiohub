@@ -1,4 +1,4 @@
-#include "drv_hd44780_lcd.h"
+#include "lcd/iohub_hd44780_lcd.h"
 
 #ifndef WIN32
 //#include <unistd.h>
@@ -65,8 +65,8 @@ DL  - 0 = 4-bit interface
       1 = 8-bit interface
 N   - 0 = 1/8 or 1/11 duty (1 line)
       1 = 1/16 duty (2 lines)
-F   - 0 = 5×8 dots
-      1 = 5×10 dots
+F   - 0 = 5ï¿½8 dots
+      1 = 5ï¿½10 dots
 BF  - 0 = can accept instruction
       1 = internal operation in progress
 
@@ -123,54 +123,54 @@ https://github.com/fdebrabander/Arduino-LiquidCrystal-I2C-library/blob/master/Li
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_command(hd44780_lcd_ctx *aCtx, unsigned char aCommand);
-int drv_hd44780_lcd_write_byte(hd44780_lcd_ctx *aCtx, unsigned char aByte, unsigned char aMode);
-int drv_hd44780_lcd_write_4bits(hd44780_lcd_ctx *aCtx, u8 aByte);
-int drv_hd44780_lcd_write_hardware(hd44780_lcd_ctx *aCtx, u8 aByte);
-int drv_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte);
+int iohub_hd44780_lcd_write_command(hd44780_lcd_ctx *aCtx, unsigned char aCommand);
+int iohub_hd44780_lcd_write_byte(hd44780_lcd_ctx *aCtx, unsigned char aByte, unsigned char aMode);
+int iohub_hd44780_lcd_write_4bits(hd44780_lcd_ctx *aCtx, u8 aByte);
+int iohub_hd44780_lcd_write_hardware(hd44780_lcd_ctx *aCtx, u8 aByte);
+int iohub_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte);
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_init(hd44780_lcd_ctx *aCtx, u8 aI2CDevice)
+int iohub_hd44780_lcd_init(hd44780_lcd_ctx *aCtx, u8 aI2CDevice)
 {
     int theRet;
 
     memset(aCtx, 0x00, sizeof(hd44780_lcd_ctx));
     aCtx->mBacklightValue = LCD_BACKLIGHT_ON;
 
-    theRet = drv_i2c_init(&aCtx->mI2CCtx,  aI2CDevice);
+    theRet = iohub_i2c_init(&aCtx->mI2CCtx,  aI2CDevice);
     if (theRet != SUCCESS)
         return theRet;
 
         //HD44780 Initialisation. Refer you to HD44780 specification, p46
-    drv_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
+    iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
     time_delay_us(4500); // Wait min 4.1ms
-    drv_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
+    iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
     time_delay_us(4500); // Wait min 4.1ms
-    drv_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
+    iohub_hd44780_lcd_write_4bits(aCtx, 0x03 << 4);
     time_delay_us(150); // Wait min 100us
-    drv_hd44780_lcd_write_4bits(aCtx, 0x02 << 4);
+    iohub_hd44780_lcd_write_4bits(aCtx, 0x02 << 4);
 
-    drv_hd44780_lcd_write_command(aCtx, LCD_FUNCTIONSET | LCD_FUNCTIONSET_4BITMODE | LCD_FUNCTIONSET_2LINE | LCD_FUNCTIONSET_5x8DOTS);
-    drv_hd44780_lcd_write_command(aCtx, LCD_DISPLAYCONTROL | LCD_DISPLAYCONTROL_ON | LCD_DISPLAYCONTROL_CURSOROFF | LCD_DISPLAYCONTROL_BLINKOFF);
-    drv_hd44780_lcd_write_command(aCtx, LCD_ENTRYMODESET | LCD_ENTRYMODESET_LEFT | LCD_ENTRYMODESET_SHIFTDECREMENT);
+    iohub_hd44780_lcd_write_command(aCtx, LCD_FUNCTIONSET | LCD_FUNCTIONSET_4BITMODE | LCD_FUNCTIONSET_2LINE | LCD_FUNCTIONSET_5x8DOTS);
+    iohub_hd44780_lcd_write_command(aCtx, LCD_DISPLAYCONTROL | LCD_DISPLAYCONTROL_ON | LCD_DISPLAYCONTROL_CURSOROFF | LCD_DISPLAYCONTROL_BLINKOFF);
+    iohub_hd44780_lcd_write_command(aCtx, LCD_ENTRYMODESET | LCD_ENTRYMODESET_LEFT | LCD_ENTRYMODESET_SHIFTDECREMENT);
 
-    drv_hd44780_lcd_clear(aCtx);
-    drv_hd44780_lcd_home(aCtx);
+    iohub_hd44780_lcd_clear(aCtx);
+    iohub_hd44780_lcd_home(aCtx);
 
     return SUCCESS;
 }
 
 /* ----------------------------------------------------- */
 
-void drv_hd44780_lcd_uninit(hd44780_lcd_ctx *aCtx)
+void iohub_hd44780_lcd_uninit(hd44780_lcd_ctx *aCtx)
 {
-    drv_i2c_uninit(&aCtx->mI2CCtx);
+    iohub_i2c_uninit(&aCtx->mI2CCtx);
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_set_backlight(hd44780_lcd_ctx *aCtx, BOOL afEnable)
+int iohub_hd44780_lcd_set_backlight(hd44780_lcd_ctx *aCtx, BOOL afEnable)
 {
     int theRet = SUCCESS;
 
@@ -178,7 +178,7 @@ int drv_hd44780_lcd_set_backlight(hd44780_lcd_ctx *aCtx, BOOL afEnable)
     if (aCtx->mBacklightValue != theNewBacklightValue)
     {
         aCtx->mBacklightValue = theNewBacklightValue;
-        theRet = drv_hd44780_lcd_write_hardware(aCtx, 0x00);
+        theRet = iohub_hd44780_lcd_write_hardware(aCtx, 0x00);
     }
 
     return theRet;
@@ -186,7 +186,7 @@ int drv_hd44780_lcd_set_backlight(hd44780_lcd_ctx *aCtx, BOOL afEnable)
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_set_cursor(hd44780_lcd_ctx *aCtx, u8 aCol, u8 aRow)
+int iohub_hd44780_lcd_set_cursor(hd44780_lcd_ctx *aCtx, u8 aCol, u8 aRow)
 {
     static int sRowOffsets[] = { 0x00, 0x40, 0x14, 0x54 };
     
@@ -196,14 +196,14 @@ int drv_hd44780_lcd_set_cursor(hd44780_lcd_ctx *aCtx, u8 aCol, u8 aRow)
     if (aRow < 1)
         aRow = 1;
 
-    return drv_hd44780_lcd_write_command(aCtx, LCD_SETDDRAMADDR | (aCol + sRowOffsets[aRow - 1]));
+    return iohub_hd44780_lcd_write_command(aCtx, LCD_SETDDRAMADDR | (aCol + sRowOffsets[aRow - 1]));
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_home(hd44780_lcd_ctx *aCtx)
+int iohub_hd44780_lcd_home(hd44780_lcd_ctx *aCtx)
 {
-    int theRet = drv_hd44780_lcd_write_command(aCtx, LCD_RETURNHOME);
+    int theRet = iohub_hd44780_lcd_write_command(aCtx, LCD_RETURNHOME);
 
     time_delay_us(2000); //This command takes a long time
 
@@ -212,9 +212,9 @@ int drv_hd44780_lcd_home(hd44780_lcd_ctx *aCtx)
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_clear(hd44780_lcd_ctx *aCtx)
+int iohub_hd44780_lcd_clear(hd44780_lcd_ctx *aCtx)
 {
-    int theRet = drv_hd44780_lcd_write_command(aCtx, LCD_CLEARDISPLAY);
+    int theRet = iohub_hd44780_lcd_write_command(aCtx, LCD_CLEARDISPLAY);
 
     time_delay_us(2000); //This command takes a long time
 
@@ -223,13 +223,13 @@ int drv_hd44780_lcd_clear(hd44780_lcd_ctx *aCtx)
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_string(hd44780_lcd_ctx *aCtx, const char *aStr)
+int iohub_hd44780_lcd_write_string(hd44780_lcd_ctx *aCtx, const char *aStr)
 {
     int i = 0;
 
     while(aStr[i] != '\0') 
     {
-        int theRet = drv_hd44780_lcd_write_char(aCtx, aStr[i]);
+        int theRet = iohub_hd44780_lcd_write_char(aCtx, aStr[i]);
         if (theRet != SUCCESS)
             return theRet;
 
@@ -241,57 +241,57 @@ int drv_hd44780_lcd_write_string(hd44780_lcd_ctx *aCtx, const char *aStr)
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_char(hd44780_lcd_ctx *aCtx, char aChar)
+int iohub_hd44780_lcd_write_char(hd44780_lcd_ctx *aCtx, char aChar)
 {
-    return drv_hd44780_lcd_write_byte(aCtx, aChar, BIT_RS);
+    return iohub_hd44780_lcd_write_byte(aCtx, aChar, BIT_RS);
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_command(hd44780_lcd_ctx *aCtx, unsigned char aCommand)
+int iohub_hd44780_lcd_write_command(hd44780_lcd_ctx *aCtx, unsigned char aCommand)
 {
-    return drv_hd44780_lcd_write_byte(aCtx, aCommand, 0x00);
+    return iohub_hd44780_lcd_write_byte(aCtx, aCommand, 0x00);
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_byte(hd44780_lcd_ctx *aCtx, unsigned char aByte, unsigned char aMode)
+int iohub_hd44780_lcd_write_byte(hd44780_lcd_ctx *aCtx, unsigned char aByte, unsigned char aMode)
 {
     unsigned char theHigh = aByte & 0xF0;
     unsigned char theLow = (aByte<<4) & 0xF0;
 
-    int theRet = drv_hd44780_lcd_write_4bits(aCtx, theHigh | aMode);
+    int theRet = iohub_hd44780_lcd_write_4bits(aCtx, theHigh | aMode);
     if (theRet == SUCCESS)
-        theRet = drv_hd44780_lcd_write_4bits(aCtx, theLow | aMode); 
+        theRet = iohub_hd44780_lcd_write_4bits(aCtx, theLow | aMode); 
 
     return theRet;
 }
  
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_4bits(hd44780_lcd_ctx *aCtx, u8 aByte)
+int iohub_hd44780_lcd_write_4bits(hd44780_lcd_ctx *aCtx, u8 aByte)
 {
-    int theRet = drv_hd44780_lcd_write_hardware(aCtx, aByte);
+    int theRet = iohub_hd44780_lcd_write_hardware(aCtx, aByte);
     if (theRet == SUCCESS)
-        theRet = drv_hd44780_lcd_pulse_enable(aCtx, aByte);
+        theRet = iohub_hd44780_lcd_pulse_enable(aCtx, aByte);
 
     return theRet;
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_write_hardware(hd44780_lcd_ctx *aCtx, u8 aByte)
+int iohub_hd44780_lcd_write_hardware(hd44780_lcd_ctx *aCtx, u8 aByte)
 {
     unsigned char theByte = aByte | aCtx->mBacklightValue;
-    return drv_i2c_write(&aCtx->mI2CCtx, &theByte, sizeof(theByte), TRUE);
+    return iohub_i2c_write(&aCtx->mI2CCtx, &theByte, sizeof(theByte), TRUE);
 }
 
 /* ----------------------------------------------------- */
 
-int drv_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte)
+int iohub_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte)
 {
         // En bit high
-    int theRet = drv_hd44780_lcd_write_hardware(aCtx, aByte | BIT_EN);
+    int theRet = iohub_hd44780_lcd_write_hardware(aCtx, aByte | BIT_EN);
     if (theRet != SUCCESS)
         return theRet;
 
@@ -299,7 +299,7 @@ int drv_hd44780_lcd_pulse_enable(hd44780_lcd_ctx *aCtx, u8 aByte)
     time_delay_us(1);
 
         // En bit low
-    theRet = drv_hd44780_lcd_write_hardware(aCtx, aByte & ~BIT_EN);
+    theRet = iohub_hd44780_lcd_write_hardware(aCtx, aByte & ~BIT_EN);
     if (theRet != SUCCESS)
         return theRet;
 

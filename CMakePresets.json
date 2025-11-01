@@ -1,0 +1,17 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "mpsse",
+            "displayName": "mpsse",
+            "description": "Build for MPSSE platform",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "IOHUB_PLATFORM": "${env:IOHUB_PLATFORM}"
+            },
+            "environment": {
+                "IOHUB_PLATFORM": "MPSSE"
+            }
+        }
+    ]
+}

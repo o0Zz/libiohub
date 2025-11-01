@@ -1,7 +1,7 @@
 #ifndef _DRV_UART_H_
 #define _DRV_UART_H_
 
-#include "drivers/drv_common.h"
+#include "utils/iohub_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,17 +33,17 @@ typedef struct uart_ctx_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t 			drv_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode);
+ret_code_t 			iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode);
 
-u16	    			drv_uart_data_available(uart_ctx *aCtx);
+u16	    			iohub_uart_data_available(uart_ctx *aCtx);
 
-u8    				drv_uart_read_byte(uart_ctx *aCtx);
+u8    				iohub_uart_read_byte(uart_ctx *aCtx);
 
-ret_code_t    		drv_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize);
+ret_code_t    		iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize);
 
-ret_code_t    		drv_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize);
+ret_code_t    		iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize);
 
-void    			drv_uart_close(uart_ctx *aCtx);
+void    			iohub_uart_close(uart_ctx *aCtx);
 
 #ifdef __cplusplus
 }

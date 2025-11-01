@@ -1,9 +1,9 @@
-#include "drv_digoo_r8h.h"
+#include "sensor/iohub_digoo_r8h.h"
 
 //#define DEBUG
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				log_debug(__VA_ARGS__)
-#	define LOG_ERROR(...)				log_error(__VA_ARGS__)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_ERROR(...)				IOHUB_LOG_ERROR(__VA_ARGS__)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
 #	define LOG_ERROR(...)				do{}while(0)
@@ -16,7 +16,7 @@
 
 /* ----------------------------------------------------------------- */
 
-int drv_digoo_r8h_init(digoo_r8h *aCtx)
+int iohub_digoo_r8h_init(digoo_r8h *aCtx)
 {
     int theRet = SUCCESS;
 
@@ -27,13 +27,13 @@ int drv_digoo_r8h_init(digoo_r8h *aCtx)
 
 /* ----------------------------------------------------------------- */
 
-void drv_digoo_r8h_uninit(digoo_r8h *aCtx)
+void iohub_digoo_r8h_uninit(digoo_r8h *aCtx)
 {
 }
 
 /* ----------------------------------------------------- */
 
-static u16 drv_digoo_r8h_read_timing(digoo_r8h *aCtx) 
+static u16 iohub_digoo_r8h_read_timing(digoo_r8h *aCtx) 
 {
 	//LOG_DEBUG("%d, ", aCtx->mTimings[aCtx->mTimingReadIdx]);
 	return aCtx->mTimings[aCtx->mTimingReadIdx++];
@@ -41,16 +41,16 @@ static u16 drv_digoo_r8h_read_timing(digoo_r8h *aCtx)
 
 /* ----------------------------------------------------- */
 
-BOOL drv_digoo_r8h_read_bit(digoo_r8h *aCtx, u8 *aBit) 
+BOOL iohub_digoo_r8h_read_bit(digoo_r8h *aCtx, u8 *aBit) 
 {
 	BOOL theRet = FALSE;
     u32 theTimeMs;
 
-	theTimeMs = drv_digoo_r8h_read_timing(aCtx);
+	theTimeMs = iohub_digoo_r8h_read_timing(aCtx);
 	if (!IS_EXPECTED_TIME(theTimeMs, DRV_DIGOO_R8H_CLK, DRV_DIGOO_R8H_RECV_ACCURACY))
 		return FALSE;
 
-	theTimeMs = drv_digoo_r8h_read_timing(aCtx);
+	theTimeMs = iohub_digoo_r8h_read_timing(aCtx);
     if (IS_EXPECTED_TIME(theTimeMs, DRV_DIGOO_R8H_BIT_0, DRV_DIGOO_R8H_RECV_ACCURACY))
     {
         *aBit = 0;
@@ -69,7 +69,7 @@ BOOL drv_digoo_r8h_read_bit(digoo_r8h *aCtx, u8 *aBit)
 
 /* ----------------------------------------------------- */
 
-BOOL drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *aTemperature, u8 *anHumidity)
+BOOL iohub_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *aTemperature, u8 *anHumidity)
 {
 	u8 			i;
     u8          theBit = 0;
@@ -82,22 +82,22 @@ BOOL drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *a
 	
 	for(i = 0; i < 8; i++)
 	{
-		if (!drv_digoo_r8h_read_bit(aCtx, &theBit))
+		if (!iohub_digoo_r8h_read_bit(aCtx, &theBit))
 			return FALSE;
 	
 		*aSensorID <<= 1;
 		*aSensorID |= theBit;
 	}
 
-	if (!drv_digoo_r8h_read_bit(aCtx, &theBit)) //Battery low
+	if (!iohub_digoo_r8h_read_bit(aCtx, &theBit)) //Battery low
 		return FALSE;
 	
-	if (!drv_digoo_r8h_read_bit(aCtx, &theBit)) //??
+	if (!iohub_digoo_r8h_read_bit(aCtx, &theBit)) //??
 		return FALSE;
 
 	for(i = 0; i < 2; i++)
 	{
-		if (!drv_digoo_r8h_read_bit(aCtx, &theBit))
+		if (!iohub_digoo_r8h_read_bit(aCtx, &theBit))
 			return FALSE;
 		
 		*aChannelID <<= 1;
@@ -106,7 +106,7 @@ BOOL drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *a
 
 	for(i = 0; i < 12; i++)
 	{
-		if (!drv_digoo_r8h_read_bit(aCtx, &theBit))
+		if (!iohub_digoo_r8h_read_bit(aCtx, &theBit))
 			return FALSE;
 		
 		theTemperature <<= 1;
@@ -117,13 +117,13 @@ BOOL drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *a
 		//??
 	for(i = 0; i < 4; i++)
 	{
-		if (!drv_digoo_r8h_read_bit(aCtx, &theBit))
+		if (!iohub_digoo_r8h_read_bit(aCtx, &theBit))
 			return FALSE;
 	}
 	
     for(i = 0; i < 8; i++)
 	{
-		if (!drv_digoo_r8h_read_bit(aCtx, &theBit))
+		if (!iohub_digoo_r8h_read_bit(aCtx, &theBit))
 			return FALSE;
 	
 		*anHumidity <<= 1;
@@ -135,7 +135,7 @@ BOOL drv_digoo_r8h_read(digoo_r8h *aCtx, u8 *aSensorID, u8 *aChannelID, float *a
 
 /* ----------------------------------------------------- */
 
-void drv_digoo_r8h_dump_timings(digoo_r8h *aCtx)
+void iohub_digoo_r8h_dump_timings(digoo_r8h *aCtx)
 {
 #ifdef DEBUG
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
@@ -147,7 +147,7 @@ void drv_digoo_r8h_dump_timings(digoo_r8h *aCtx)
 
 /* ----------------------------------------------------- */
 
-BOOL drv_digoo_r8h_detectPacket(digital_async_receiver_interface_ctx *aCtx, u32 aDurationUs)
+BOOL iohub_digoo_r8h_detectPacket(digital_async_receiver_interface_ctx *aCtx, u16 aDurationUs)
 {
 	digoo_r8h *theCtx = (digoo_r8h *)aCtx;
 	
@@ -172,7 +172,7 @@ BOOL drv_digoo_r8h_detectPacket(digital_async_receiver_interface_ctx *aCtx, u32 
 
 /* ----------------------------------------------------- */
 
-void drv_digoo_r8h_packetHandled(digital_async_receiver_interface_ctx *aCtx)
+void iohub_digoo_r8h_packetHandled(digital_async_receiver_interface_ctx *aCtx)
 {
 	digoo_r8h *theCtx = (digoo_r8h *)aCtx;
 	
@@ -181,13 +181,13 @@ void drv_digoo_r8h_packetHandled(digital_async_receiver_interface_ctx *aCtx)
 
 /* ----------------------------------------------------- */
 
-const digital_async_receiver_interface  *drv_digoo_r8h_get_interface(void)
+const digital_async_receiver_interface  *iohub_digoo_r8h_get_interface(void)
 {
 	static const digital_async_receiver_interface sInterface = 
 	{
 		DRV_DIGOO_R8H_ID,
-		drv_digoo_r8h_detectPacket,
-		drv_digoo_r8h_packetHandled
+		iohub_digoo_r8h_detectPacket,
+		iohub_digoo_r8h_packetHandled
 	};
 	
 	return &sInterface;

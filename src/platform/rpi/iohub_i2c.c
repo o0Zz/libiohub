@@ -1,4 +1,4 @@
-#include "board/drv_i2c.h"
+#include "platform/iohub_i2c.h"
 #include "wiringPiI2C.h"
 #include <memory.h>
 #include <stdlib.h>
@@ -7,7 +7,7 @@
 
 /* --------------------------------------------------------- */
 
-int drv_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
+int iohub_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
 {
     memset(aCtx, 0x00, sizeof(i2c_ctx));
 
@@ -19,20 +19,20 @@ int drv_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
 
 /* --------------------------------------------------------- */
 
-void drv_i2c_uninit(i2c_ctx *aCtx)
+void iohub_i2c_uninit(i2c_ctx *aCtx)
 {   
 }
 
 /* --------------------------------------------------------- */
 
-int drv_i2c_request_read(i2c_ctx *aCtx, BOOL afIssueStop)
+int iohub_i2c_request_read(i2c_ctx *aCtx, BOOL afIssueStop)
 {
     return SUCCESS;
 }
 
 /* --------------------------------------------------------- */
 
-int drv_i2c_read(i2c_ctx *aCtx, u8 *aBuffer, const u16 aLen)
+int iohub_i2c_read(i2c_ctx *aCtx, u8 *aBuffer, const u16 aLen)
 {
     int theRet;
     u16 i;
@@ -50,7 +50,7 @@ int drv_i2c_read(i2c_ctx *aCtx, u8 *aBuffer, const u16 aLen)
 
 /* --------------------------------------------------------- */
 
-int drv_i2c_write(i2c_ctx *aCtx, const u8 *aBuffer, const u16 aLen, BOOL afIssueStop)
+int iohub_i2c_write(i2c_ctx *aCtx, const u8 *aBuffer, const u16 aLen, BOOL afIssueStop)
 {
     int theRet;
     u16 i;

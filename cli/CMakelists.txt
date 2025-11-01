@@ -1,0 +1,42 @@
+# ============================================================
+# libiohub CLI - Command Line Application
+# ============================================================
+project(iohub_cli)
+
+# Require user to define IOHUB_PLATFORM at configure time
+if(NOT DEFINED IOHUB_PLATFORM)
+    message(FATAL_ERROR "You must define IOHUB_PLATFORM (e.g. -DIOHUB_PLATFORM=ESP32, ARDUINO, or RPI)")
+endif()
+
+string(TOUPPER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_UPPER)
+string(TOLOWER "${IOHUB_PLATFORM}" IOHUB_PLATFORM_LOWER)
+
+message(STATUS "Building iohub CLI for platform: ${IOHUB_PLATFORM_UPPER}")
+
+# Collect CLI sources (everything under cli/)
+file(GLOB_RECURSE IOHUB_CLI_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+)
+
+# Create the executable
+add_executable(iohub_cli ${IOHUB_CLI_SRC})
+
+# Link against the iohub static library
+target_link_libraries(iohub_cli PRIVATE iohub)
+
+# Include libiohub headers and platform headers
+target_include_directories(iohub_cli
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../platforms/${IOHUB_PLATFORM_LOWER}
+)
+
+# Add platform definition (so CLI also knows the platform)
+target_compile_definitions(iohub_cli
+    PRIVATE
+        IOHUB_PLATFORM_${IOHUB_PLATFORM_UPPER}=1
+)
+
+# Set C++ standard (since CLI uses .cpp files)
+set_property(TARGET iohub_cli PROPERTY CXX_STANDARD 11)
+set_property(TARGET iohub_cli PROPERTY CXX_STANDARD_REQUIRED ON)

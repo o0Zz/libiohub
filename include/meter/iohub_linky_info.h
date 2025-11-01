@@ -1,8 +1,8 @@
 #ifndef _DRV_LINKY_INFO_H_
 #define _DRV_LINKY_INFO_H_
 
-#include "drivers/drv_common.h"
-#include "board/drv_uart.h"
+#include "utils/iohub_types.h"
+#include "platform/iohub_uart.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -91,17 +91,17 @@ typedef struct linky_info_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t		drv_linky_info_init(linky_info *aCtx, u8 aRxPin);
+ret_code_t		iohub_linky_info_init(linky_info *aCtx, u8 aRxPin);
 
-void    		drv_linky_info_uninit(linky_info *aCtx);
+void    		iohub_linky_info_uninit(linky_info *aCtx);
 
-BOOL    		drv_linky_info_run(linky_info *aCtx);
+BOOL    		iohub_linky_info_run(linky_info *aCtx);
 
-uint32_t 		drv_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type);
+uint32_t 		iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type);
 
-void	 		drv_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT]);
+void	 		iohub_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT]);
 
-const char  	*drv_linky_info_type_to_str(teleinfo_t teleinfo_type);
+const char  	*iohub_linky_info_type_to_str(teleinfo_t teleinfo_type);
 
 #ifdef __cplusplus
 }

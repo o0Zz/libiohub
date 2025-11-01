@@ -1,4 +1,7 @@
-#include "drv_linky_info.h"
+#include "meter/iohub_linky_info.h"
+#include "utils/iohub_logger.h"
+
+
 //https://github.com/jaysee/teleInfo
 
 #define LOG_LINKY
@@ -45,30 +48,31 @@ const char sTeleInfoLabels[TELEINFO_COUNT][10] = {
 
 /* ----------------------------------------------------------------- */
 
-ret_code_t drv_linky_info_init(linky_info *aCtx, u8 aRxPin)
+ret_code_t iohub_linky_info_init(linky_info *aCtx, u8 aRxPin)
 {
-    memset(aCtx, 0x00, sizeof(digoo_r8h));
+    memset(aCtx, 0x00, sizeof(linky_info));
 
-	return drv_uart_init(&aCtx->mUart, UART_NOT_USED_PIN, aRxPin, 1200, UART_8N1);
+	return iohub_uart_init(&aCtx->mUart, UART_NOT_USED_PIN, aRxPin, 1200, UART_8N1);
 }
 
 /* ----------------------------------------------------------------- */
 
-void drv_linky_info_uninit(linky_info *aCtx)
+void iohub_linky_info_uninit(linky_info *aCtx)
 {
-	return drv_uart_close(&aCtx->mUart);
+	iohub_uart_close(&aCtx->mUart);
 }
+
 /* ----------------------------------------------------- */
 
-	static const char *drv_linky_info_read_line(linky_info *aCtx) 
+	static const char *iohub_linky_info_read_line(linky_info *aCtx) 
 	{
 		/*
 			Line format:  "KEY VALUE CRC\r\n"
 		*/
 		
-		if (drv_uart_data_available(&aCtx->mUart) > 0)
+		if (iohub_uart_data_available(&aCtx->mUart) > 0)
 		{
-			char theChar = drv_uart_read_byte(&aCtx->mUart) & 0x7F;
+			char theChar = iohub_uart_read_byte(&aCtx->mUart) & 0x7F;
 			
 			if (theChar == 0x02 /*STX*/ || theChar == 0x03 /*ETX*/)
 				return NULL; //Nothing to do, skip STX and ETX and continue
@@ -96,12 +100,12 @@ void drv_linky_info_uninit(linky_info *aCtx)
 					if (crc_computed == crc_read)
 						return aCtx->mLine;
 				
-					log_error("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)\n", aCtx->mLine, crc_read, crc_computed);
+					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)\n", aCtx->mLine, crc_read, crc_computed);
 				}
 				else
 				{
 					aCtx->mLineIdx = 0;
-					log_error("TeleInfo: Invalid string (Too small)\n");
+					IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)\n");
 				}
 			}
 		}
@@ -111,9 +115,9 @@ void drv_linky_info_uninit(linky_info *aCtx)
 	
 /* ----------------------------------------------------- */
 
-BOOL drv_linky_info_run(linky_info *aCtx) 
+BOOL iohub_linky_info_run(linky_info *aCtx) 
 {
-	const char *theLine = drv_linky_info_read_line(aCtx);
+	const char *theLine = iohub_linky_info_read_line(aCtx);
 	
 	if (theLine != NULL)
 	{
@@ -187,7 +191,7 @@ BOOL drv_linky_info_run(linky_info *aCtx)
 			}
 		}
 		
-		log_error("TeleInfo: Line not handled: %s\n", theLine);
+		IOHUB_LOG_ERROR("TeleInfo: Line not handled: %s\n", theLine);
 	}
 	
 	return false;
@@ -195,11 +199,11 @@ BOOL drv_linky_info_run(linky_info *aCtx)
 
 /* ----------------------------------------------------- */
 
-uint32_t drv_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
+uint32_t iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 {
 	if (teleinfo_type >= TELEINFO_COUNT)
 	{
-		log_error("TeleInfo: Get incorrect type: %d\n", teleinfo_type);
+		IOHUB_LOG_ERROR("TeleInfo: Get incorrect type: %d\n", teleinfo_type);
 		return 0;
 	}
 	
@@ -208,14 +212,14 @@ uint32_t drv_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 
 /* ----------------------------------------------------- */
 
-void drv_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT])
+void iohub_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT])
 {
 	memcpy(aTeleInfo, aCtx->mTeleInfo, sizeof(aCtx->mTeleInfo));
 }
 
 /* ----------------------------------------------------- */
 
-const char *drv_linky_info_type_to_str(teleinfo_t teleinfo_type)
+const char *iohub_linky_info_type_to_str(teleinfo_t teleinfo_type)
 {
 	if (teleinfo_type >= TELEINFO_COUNT)
 		return NULL;
