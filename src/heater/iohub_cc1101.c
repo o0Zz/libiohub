@@ -148,7 +148,7 @@ void iohub_cc1101_reset(cc1101_ctx *aCtx);
 	Bit 3:0  = FIFO_BYTES_AVAILABLE[3:0]
   */
 
-ret_code_t iohub_cc1101_check_status(const char *aFct, uint8_t aStatus)
+ret_code_t iohub_cc1101_check_status(const char *aFct, u8 aStatus)
 {
 	//LOG_DEBUG_CC1101("%s Status (n-1): 0x%x\n", aFct, aStatus);
 
@@ -178,7 +178,7 @@ ret_code_t iohub_cc1101_check_status(const char *aFct, uint8_t aStatus)
 
 /* -------------------------------------------------------------- */
 
-void iohub_cc1101_print_state(uint8_t aState)
+void iohub_cc1101_print_state(u8 aState)
 {
 	static const char *sStateStr[STATE_COUNT] = 
 	{
@@ -351,7 +351,7 @@ static INLINE void iohub_cc1101_interrupt_data_received(void)
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, uint8_t aDefaultConfig[CC1101_REGISTERS_COUNT], uint8_t aFirstBytePaTable)
+ret_code_t iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, u8 aDefaultConfig[CC1101_REGISTERS_COUNT], u8 aFirstBytePaTable)
 {
     ret_code_t   theRet;
 
@@ -380,7 +380,7 @@ ret_code_t iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, uint8_
     }
 	
         //Set default configuration
-    for (uint8_t i=0; i<CC1101_REGISTERS_COUNT; i++) 
+    for (u8 i=0; i<CC1101_REGISTERS_COUNT; i++) 
 	{
 		if (aDefaultConfig[i] != 0xFF)
 			iohub_cc1101_write_reg(aCtx, i,  aDefaultConfig[i]);

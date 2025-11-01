@@ -123,7 +123,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 	{
 		//LOG_LINKY_DEBUG("%s\n", theLine);
 		
-		for (uint8_t i=0; i<TELEINFO_COUNT; i++)
+		for (u8 i=0; i<TELEINFO_COUNT; i++)
 		{
 			if (strncmp(sTeleInfoLabels[i], theLine, strlen(sTeleInfoLabels[i])) == 0)
 			{
@@ -132,47 +132,47 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 				if (i == OPTARIF)
 				{
 					if(strncmp("BASE", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)OPTARIF_BASE;
+						aCtx->mTeleInfo[i] = (u32)OPTARIF_BASE;
 					else if(strncmp("HC..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)OPTARIF_HC;
+						aCtx->mTeleInfo[i] = (u32)OPTARIF_HC;
 					else if(strncmp("EJP", theValue, 3) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)OPTARIF_EJP;
+						aCtx->mTeleInfo[i] = (u32)OPTARIF_EJP;
 					else if(strncmp("BBR", theValue, 3) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)OPTARIF_BBRx;
+						aCtx->mTeleInfo[i] = (u32)OPTARIF_BBRx;
 				}
 				else if (i == PTEC)
 				{
 					if(strncmp("TH..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_TH; 
+						aCtx->mTeleInfo[i] = (u32)PTEC_TH; 
 					else if(strncmp("HC..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HC;  
+						aCtx->mTeleInfo[i] = (u32)PTEC_HC;  
 					else if(strncmp("HP..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HP;  
+						aCtx->mTeleInfo[i] = (u32)PTEC_HP;  
 					else if(strncmp("HN..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HN; 
+						aCtx->mTeleInfo[i] = (u32)PTEC_HN; 
 					else if(strncmp("PM..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_PM;  
+						aCtx->mTeleInfo[i] = (u32)PTEC_PM;  
 					else if(strncmp("HCJB", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HCJB;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HCJB;
 					else if(strncmp("HCJW", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HCJW;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HCJW;
 					else if(strncmp("HCJR", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HCJR;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HCJR;
 					else if(strncmp("HPJB", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HPJB;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HPJB;
 					else if(strncmp("HPJW", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HPJW;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HPJW;
 					else if(strncmp("HPJR", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)PTEC_HPJR;
+						aCtx->mTeleInfo[i] = (u32)PTEC_HPJR;
 				}
 				else if (i == DEMAIN)
 				{
 					if(strncmp("BLEU", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)DEMAIN_BLEU; 
+						aCtx->mTeleInfo[i] = (u32)DEMAIN_BLEU; 
 					else if(strncmp("BLAN", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)DEMAIN_BLANC;  
+						aCtx->mTeleInfo[i] = (u32)DEMAIN_BLANC;  
 					else if(strncmp("ROUG", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (uint32_t)DEMAIN_ROUGE;  
+						aCtx->mTeleInfo[i] = (u32)DEMAIN_ROUGE;  
 				}
 				else
 				{
@@ -199,7 +199,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 
 /* ----------------------------------------------------- */
 
-uint32_t iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
+u32 iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 {
 	if (teleinfo_type >= TELEINFO_COUNT)
 	{
@@ -212,7 +212,7 @@ uint32_t iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 
 /* ----------------------------------------------------- */
 
-void iohub_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT])
+void iohub_linky_info_get_all(linky_info *aCtx, u32 aTeleInfo[TELEINFO_COUNT])
 {
 	memcpy(aTeleInfo, aCtx->mTeleInfo, sizeof(aCtx->mTeleInfo));
 }

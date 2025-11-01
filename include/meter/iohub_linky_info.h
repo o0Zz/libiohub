@@ -85,7 +85,7 @@ typedef struct linky_info_s
 	char 			mLine[32];
 	u8 				mLineIdx;
 	u32				mNumberOfRefresh;
-	uint32_t		mTeleInfo[TELEINFO_COUNT];
+	u32				mTeleInfo[TELEINFO_COUNT];
 }linky_info;
 
 /* -------------------------------------------------------------- */
@@ -96,9 +96,9 @@ void    		iohub_linky_info_uninit(linky_info *aCtx);
 
 BOOL    		iohub_linky_info_run(linky_info *aCtx);
 
-uint32_t 		iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type);
+u32 			iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type);
 
-void	 		iohub_linky_info_get_all(linky_info *aCtx, uint32_t aTeleInfo[TELEINFO_COUNT]);
+void	 		iohub_linky_info_get_all(linky_info *aCtx, u32 aTeleInfo[TELEINFO_COUNT]);
 
 const char  	*iohub_linky_info_type_to_str(teleinfo_t teleinfo_type);
 
