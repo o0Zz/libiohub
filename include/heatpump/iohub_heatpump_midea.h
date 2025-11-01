@@ -1,5 +1,4 @@
-#ifndef _DRV_HEATPUMP_MIDEA_H_
-#define _DRV_HEATPUMP_MIDEA_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 #include "utils/iohub_digital_async_receiver.h"
@@ -36,6 +35,4 @@ void 									iohub_heatpump_midea_dump_timings(heatpump_midea *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

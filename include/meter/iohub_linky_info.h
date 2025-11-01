@@ -1,5 +1,4 @@
-#ifndef _DRV_LINKY_INFO_H_
-#define _DRV_LINKY_INFO_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 #include "platform/iohub_uart.h"
@@ -105,6 +104,4 @@ const char  	*iohub_linky_info_type_to_str(teleinfo_t teleinfo_type);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

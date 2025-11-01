@@ -9,7 +9,6 @@
 #include "utils/iohub_errors.h"
 #include "utils/iohub_macros.h"
 
-
 typedef     unsigned char   u8;
 typedef     unsigned short  u16;
 typedef     unsigned long   u32;

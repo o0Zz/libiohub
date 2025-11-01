@@ -1,8 +1,7 @@
-#ifndef _DRV_LIGHT_SEAMAID_H_
-#define _DRV_LIGHT_SEAMAID_H_
+#pragma once
 
 #include "utils/iohub_types.h"
-#include "components/digital_async_receiver/digital_async_receiver.h"
+#include "utils/iohub_digital_async_receiver.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,6 +55,4 @@ void 									iohub_light_seamaid_dump_timings(light_seamaid *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

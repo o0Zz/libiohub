@@ -1,5 +1,4 @@
-#ifndef _DRV_SAUTER_H_
-#define _DRV_SAUTER_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 #include "heater/iohub_cc1101.h"
@@ -27,6 +26,4 @@ u8 										iohub_sauter_heater_crc(u8 *aBuffer, u16 aBufferSize);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

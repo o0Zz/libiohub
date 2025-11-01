@@ -1,4 +1,6 @@
-//#include "mpsse.h"
+#pragma once
+
+#include "mpsse.h"
 
 extern struct mpsse_context *gMPSSECtx;
 

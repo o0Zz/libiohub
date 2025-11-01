@@ -1,5 +1,4 @@
-#ifndef _DRV_UART_H_
-#define _DRV_UART_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 
@@ -47,6 +46,4 @@ void    			iohub_uart_close(uart_ctx *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

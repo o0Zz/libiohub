@@ -1,5 +1,4 @@
-#ifndef _DRV_CC1101_H_
-#define _DRV_CC1101_H_
+#pragma once
 
 // -----------------------------------------------------------------
 // http://www.ti.com/lit/an/swra112b/swra112b.pdf
@@ -84,6 +83,4 @@ BOOL 			iohub_cc1101_is_data_available(cc1101_ctx *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

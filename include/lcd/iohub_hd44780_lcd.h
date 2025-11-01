@@ -1,5 +1,4 @@
-#ifndef _DRV_HD44780_LCD_H_
-#define _DRV_HD44780_LCD_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 #include "platform/iohub_i2c.h"
@@ -37,6 +36,4 @@ int iohub_hd44780_lcd_write_char(hd44780_lcd_ctx *aCtx, char aChar);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

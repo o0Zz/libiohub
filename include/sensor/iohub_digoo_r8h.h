@@ -1,5 +1,4 @@
-#ifndef _DRV_DIGOO_R8H_H_
-#define _DRV_DIGOO_R8H_H_
+#pragma once
 
 #include "utils/iohub_types.h"
 #include "utils/iohub_digital_async_receiver.h"
@@ -32,6 +31,4 @@ void 									iohub_digoo_r8h_dump_timings(digoo_r8h *aCtx);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -1,5 +1,4 @@
-#ifndef _DRV_HEATPUMP_MITSUBISHI_H_
-#define _DRV_HEATPUMP_MITSUBISHI_H_
+#pragma once
 
 #include "platform/iohub_uart.h"
 #include "heatpump/iohub_heatpump_common.h"
@@ -16,6 +15,10 @@ IMPORTANT:
 	UART is baud 2400 with parity EVEN !
 	DO not forget parity or it will not works !
 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* -------------------------------------------------------------- */
 
@@ -35,4 +38,6 @@ ret_code_t 			iohub_heatpump_mitsubishi_read(heatpump_mitsubishi_ctx *aCtx, IoHu
 
 ret_code_t 			iohub_heatpump_mitsubishi_read_room_temperature(heatpump_mitsubishi_ctx *aCtx, float *aTemperature);
 
+#ifdef __cplusplus
+}
 #endif
