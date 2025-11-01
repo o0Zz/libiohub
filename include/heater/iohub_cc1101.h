@@ -68,7 +68,7 @@ typedef struct cc1101_ctx_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t     	iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, u8 aDefaultConfig[], u8 aFirstBytePaTable);
+ret_code_t     	iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, u8 aDefaultConfig[CC1101_REGISTERS_COUNT], u8 aFirstBytePaTable);
 void    		iohub_cc1101_uninit(cc1101_ctx *aCtx);
 
 ret_code_t 		iohub_cc1101_wakeup(cc1101_ctx *aCtx);

@@ -3,7 +3,6 @@
 #include "utils/iohub_logs.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
-#include "esp_log.h"
 #include "esp_err.h"
 #include <string.h>
 
@@ -34,7 +33,7 @@ ret_code_t iohub_spi_init(spi_ctx *aCtx, u32 aCSnPin, IOHubSPIMode aMode)
 
     esp32_spi_ctx_t *esp_ctx = (esp32_spi_ctx_t*)malloc(sizeof(esp32_spi_ctx_t));
     if (!esp_ctx) {
-        ESP_LOGE(TAG, "Failed to allocate memory for SPI context");
+        IOHUB_LOG_ERROR("Failed to allocate memory for SPI context");
         return E_DEVICE_INIT_FAILED;
     }
     
@@ -53,7 +52,7 @@ ret_code_t iohub_spi_init(spi_ctx *aCtx, u32 aCSnPin, IOHubSPIMode aMode)
     // Initialize SPI bus
     esp_err_t ret = spi_bus_initialize(SPI_HOST_ID, &esp_ctx->bus_config, SPI_DMA_CH_AUTO);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize SPI bus: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to initialize SPI bus: %s", esp_err_to_name(ret));
         free(esp_ctx);
         return E_DEVICE_INIT_FAILED;
     }
@@ -70,7 +69,7 @@ ret_code_t iohub_spi_init(spi_ctx *aCtx, u32 aCSnPin, IOHubSPIMode aMode)
     // Add device to SPI bus
     ret = spi_bus_add_device(SPI_HOST_ID, &esp_ctx->dev_config, &esp_ctx->spi_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add SPI device: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to add SPI device: %s", esp_err_to_name(ret));
         spi_bus_free(SPI_HOST_ID);
         free(esp_ctx);
         return E_DEVICE_INIT_FAILED;
@@ -165,7 +164,7 @@ ret_code_t iohub_spi_transfer(spi_ctx *aCtx, u8 *aBuffer, u16 aBufferLen)
     
     esp_err_t ret = spi_device_transmit(esp_ctx->spi_handle, &trans);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "SPI transfer failed: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("SPI transfer failed: %s", esp_err_to_name(ret));
         iohub_spi_deselect(aCtx);
         return E_WRITE_ERROR;
     }
@@ -213,7 +212,7 @@ ret_code_t iohub_spi_write(spi_ctx *aCtx, u8 *aBuffer, u16 aBufferLen)
     
     esp_err_t ret = spi_device_transmit(esp_ctx->spi_handle, &trans);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "SPI write failed: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("SPI write failed: %s", esp_err_to_name(ret));
         iohub_spi_deselect(aCtx);
         return E_WRITE_ERROR;
     }
@@ -250,13 +249,13 @@ ret_code_t iohub_spi_read(spi_ctx *aCtx, u8 *aBuffer, u16 aBufferLen)
     
     esp_err_t ret = spi_device_transmit(esp_ctx->spi_handle, &trans);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "SPI read failed: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("SPI read failed: %s", esp_err_to_name(ret));
         iohub_spi_deselect(aCtx);
         return E_READ_ERROR;
     }
     
-    LOG_DEBUG("SPI Read:");
-    LOG_BUFFER(aBuffer, aBufferLen);
+    IOHUB_LOG_DEBUG("SPI Read:");
+    IOHUB_LOG_BUFFER(aBuffer, aBufferLen);
     
     iohub_spi_deselect(aCtx);
     return SUCCESS;

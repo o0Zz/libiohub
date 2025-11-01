@@ -23,7 +23,7 @@
 	{
 		u8 theResult = 0;
 		for (int i=0; i<8; i++)
-			theResult += (aBuffer >> 28-(4*i)) & 0x0F;
+			theResult += (aBuffer >> (28-(4*i))) & 0x0F;
 		
 		return theResult;
 	}
@@ -110,14 +110,12 @@ BOOL iohub_rs8706w_weatherlink_read(rs8706w_weatherlink *aCtx, rs8706w_weatherli
         theCRC |= theBit;
     }
 	
-    /*
 	u8 theCRCComputed = iohub_rs8706w_weatherlink_crc(aCtx, theBuffer);
     if ((theCRCComputed & 0x0F) != (theCRC & 0x0F))
     {
-		LOG_DEBUG("INVALID CRC: Expected: %X, Got: %X", theCRCComputed & 0x0F, theCRC & 0x0F);
-		return FALSE;
+		LOG_ERROR("INVALID CRC: Expected: %X, Got: %X", theCRCComputed & 0x0F, theCRC & 0x0F);
+		//return FALSE; //Continue anyway
 	}
-	*/
 	
 	anOutputData->mStationID = (theBuffer >> 24) & 0xFF;
     anOutputData->mTemperatureCelsius = ((theBuffer >> 8) & 0xFFFF) / (float)10.0;

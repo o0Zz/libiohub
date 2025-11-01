@@ -150,7 +150,7 @@ void iohub_cc1101_reset(cc1101_ctx *aCtx);
 
 ret_code_t iohub_cc1101_check_status(const char *aFct, u8 aStatus)
 {
-	//LOG_DEBUG_CC1101("%s Status (n-1): 0x%x\n", aFct, aStatus);
+	//LOG_DEBUG_CC1101("%s Status (n-1): 0x%x", aFct, aStatus);
 
 	/*switch ((aStatus >> 4) & 0x07)
 	{
@@ -165,11 +165,11 @@ ret_code_t iohub_cc1101_check_status(const char *aFct, u8 aStatus)
 		default:   LOG_DEBUG_CC1101("UNKNOWN"); break;
 	}
   
-	LOG_DEBUG_CC1101("\n");
+	LOG_DEBUG_CC1101("");
 	
 	if ( (aStatus & 0x80) != 0x00 )
 	{
-		log_error("Error: Chipset not ready, something goes wrong !\n");
+		IOHUB_LOG_ERROR("Error: Chipset not ready, something goes wrong !");
 		return E_INVALID_STATE;
 	}
 	*/
@@ -208,9 +208,9 @@ void iohub_cc1101_print_state(u8 aState)
 	};
 	
 	if (aState < STATE_COUNT)
-		LOG_DEBUG_CC1101("Chipset State %s\n", sStateStr[aState]);
+		LOG_DEBUG_CC1101("Chipset State %s", sStateStr[aState]);
 	else
-		LOG_DEBUG_CC1101("Chipset State UNKNOWN !\n");
+		LOG_DEBUG_CC1101("Chipset State UNKNOWN !");
 }
 
 /* -------------------------------------------------------------- */
@@ -233,7 +233,7 @@ u8 iohub_cc1101_read_reg(cc1101_ctx *aCtx, u8 aRegAddr, u8 aType)
 	
 	iohub_spi_deselect(&aCtx->mSPICtx);
 		
-	//LOG_DEBUG_CC1101("Read register 0x%X = 0x%X\n", aRegAddr, theValue);
+	//LOG_DEBUG_CC1101("Read register 0x%X = 0x%X", aRegAddr, theValue);
 	
 	return theValue;
 }
@@ -256,7 +256,7 @@ u8 iohub_cc1101_read_config_reg(cc1101_ctx *aCtx, u8 aRegAddr)
 
 ret_code_t iohub_cc1101_strobe(cc1101_ctx *aCtx, u8 aStrobe)
 {
-	LOG_DEBUG_CC1101("Write strobe %x\n", aStrobe);
+	LOG_DEBUG_CC1101("Write strobe %x", aStrobe);
 	
 	//IOHUB_ASSERT(aCtx->mWakeupCount > 0);
 	
@@ -292,7 +292,7 @@ ret_code_t iohub_cc1101_write_reg(cc1101_ctx *aCtx, u8 aRegAddr, u8 aValue)
 {
 	IOHUB_ASSERT(aCtx->mWakeupCount > 0);
 	
-	LOG_DEBUG_CC1101("Write reg 0x%X -> 0x%X\n", aRegAddr, aValue);
+	LOG_DEBUG_CC1101("Write reg 0x%X -> 0x%X", aRegAddr, aValue);
 	
 	iohub_spi_select(&aCtx->mSPICtx);
 
@@ -311,7 +311,7 @@ ret_code_t iohub_cc1101_write_burst_reg(cc1101_ctx *aCtx, u8 aRegAddr, u8 *aBuff
 {
 	IOHUB_ASSERT(aCtx->mWakeupCount > 0);
 	
-	LOG_DEBUG_CC1101("Write burst reg %x (len: %d)\n", aRegAddr | WRITE_BURST, aLength);
+	LOG_DEBUG_CC1101("Write burst reg %x (len: %d)", aRegAddr | WRITE_BURST, aLength);
 	
     iohub_spi_select(&aCtx->mSPICtx);
 
@@ -328,9 +328,9 @@ ret_code_t iohub_cc1101_write_burst_reg(cc1101_ctx *aCtx, u8 aRegAddr, u8 *aBuff
 
 BOOL iohub_cc1101_wait_for_state(cc1101_ctx *aCtx, u8 aState, u32 aTimeoutMS)
 {
-	u32 theStartTimeMs = TIMER_START();
+	u32 theStartTimeMs = IOHUB_TIMER_START();
 	
-	while(TIMER_ELAPSED(theStartTimeMs) < aTimeoutMS)
+	while(IOHUB_TIMER_ELAPSED(theStartTimeMs) < aTimeoutMS)
 	{
 		if (getState(aCtx) == aState)
 			return TRUE;
@@ -343,9 +343,9 @@ BOOL iohub_cc1101_wait_for_state(cc1101_ctx *aCtx, u8 aState, u32 aTimeoutMS)
 	
 /* -------------------------------------------------------------- */
 
-static inline void iohub_cc1101_interrupt_data_received(void) 
+static void IRAM_ATTR iohub_cc1101_interrupt_data_received(void *arg) 
 {
-	LOG_DEBUG_CC1101("PIN TRIGGERED!!!\n");
+	LOG_DEBUG_CC1101("PIN TRIGGERED!!!");
     //packetReceived = true;
 }
 
@@ -353,26 +353,26 @@ static inline void iohub_cc1101_interrupt_data_received(void)
 
 ret_code_t iohub_cc1101_init(cc1101_ctx *aCtx, u32 aCSnPin, u32 aGDO0Pin, u8 aDefaultConfig[CC1101_REGISTERS_COUNT], u8 aFirstBytePaTable)
 {
-    ret_code_t   theRet;
+	ret_code_t   theRet;
 
-    memset(aCtx, 0x00, sizeof(cc1101_ctx));
+	memset(aCtx, 0x00, sizeof(cc1101_ctx));
 
 	aCtx->mGDO0Pin = aGDO0Pin;
 	
-    iohub_digital_set_pin_mode(aCtx->mGDO0Pin, PinMode_Input);
+	iohub_digital_set_pin_mode(aCtx->mGDO0Pin, PinMode_Input);
     
-    theRet = iohub_spi_init(&aCtx->mSPICtx, aCSnPin, SPIMode_WaitForMisoLowAfterSelect);
-    if (theRet != SUCCESS)
-        return theRet;
+	theRet = iohub_spi_init(&aCtx->mSPICtx, aCSnPin, SPIMode_WaitForMisoLowAfterSelect);
+	if (theRet != SUCCESS)
+		return theRet;
     
 	iohub_cc1101_wakeup(aCtx);
 	
 	iohub_cc1101_reset(aCtx);
 
-    u8 theVersion = iohub_cc1101_read_status_reg(aCtx, CC1101_VERSION);
+	u8 theVersion = iohub_cc1101_read_status_reg(aCtx, CC1101_VERSION);
     if ( theVersion != 0x14)
     {
-        log_error("Invalid version: 0x%X\n", theVersion);
+        LOG_ERROR_CC1101("Invalid version: 0x%X", theVersion);
 		
 		iohub_cc1101_standby(aCtx);
 
@@ -426,7 +426,7 @@ ret_code_t iohub_cc1101_wakeup(cc1101_ctx *aCtx)
 {
 	if (aCtx->mWakeupCount++ == 0)
 	{
-		LOG_DEBUG_CC1101("Wakeup CC1101 ...\n");
+		LOG_DEBUG_CC1101("Wakeup CC1101 ...");
 		
 		iohub_spi_select(&aCtx->mSPICtx); //Low
 		iohub_time_delay_us(10);
@@ -437,7 +437,7 @@ ret_code_t iohub_cc1101_wakeup(cc1101_ctx *aCtx)
 		flushRxFifo(aCtx);
 		flushTxFifo(aCtx);
 
-		attachInterrupt(digitalPinToInterrupt(aCtx->mGDO0Pin), iohub_cc1101_interrupt_data_received, RISING); //Low to High
+		iohub_attach_interrupt(aCtx->mGDO0Pin, iohub_cc1101_interrupt_data_received, IOHUB_GPIO_INT_TYPE_RISING, NULL);
 	}
 
 	IOHUB_ASSERT(aCtx->mWakeupCount < 5);
@@ -451,9 +451,9 @@ ret_code_t iohub_cc1101_standby(cc1101_ctx *aCtx)
 {
 	if (--aCtx->mWakeupCount == 0)
 	{
-		LOG_DEBUG_CC1101("Standby CC1101 ...\n");
+		LOG_DEBUG_CC1101("Standby CC1101 ...");
 		
-		detachInterrupt(digitalPinToInterrupt(aCtx->mGDO0Pin));
+		iohub_detach_interrupt(aCtx->mGDO0Pin);
 	
 		setIdleState(aCtx);	
 		setPowerDown(aCtx);
@@ -468,7 +468,7 @@ ret_code_t iohub_cc1101_standby(cc1101_ctx *aCtx)
 
 ret_code_t iohub_cc1101_send_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacket)
 {
-	LOG_DEBUG_CC1101("iohub_cc1101_send %d bytes...\n", aPacket->mLength);
+	LOG_DEBUG_CC1101("iohub_cc1101_send %d bytes...", aPacket->mLength);
 	
 	u8 theBuffer[32] = {0x00};
 
@@ -526,7 +526,7 @@ BOOL iohub_cc1101_is_data_available(cc1101_ctx *aCtx)
 
 ret_code_t iohub_cc1101_set_receive(cc1101_ctx *aCtx)
 {
-	LOG_DEBUG_CC1101("Enter in RX state !\n");
+	LOG_DEBUG_CC1101("Enter in RX state !");
 	
 	IOHUB_ASSERT(aCtx->mWakeupCount > 0);
 	
@@ -553,7 +553,7 @@ ret_code_t iohub_cc1101_receive_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacke
 	u8 theValue = iohub_cc1101_read_status_reg(aCtx, CC1101_RXBYTES);
 	if (theValue & 0x80) //RX fifo overflow
 	{
-		log_error("RX FIFO Overflow, drop packets\n");
+		LOG_ERROR_CC1101("RX FIFO Overflow, drop packets");
 		
 		iohub_cc1101_set_receive(aCtx); //Re-enter in RX State
 		
@@ -565,7 +565,7 @@ ret_code_t iohub_cc1101_receive_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacke
 
 		if (aPacket->mLength != 0) //RX bytes pending ?
 		{
-			LOG_DEBUG_CC1101("Reading data from FIFO (Len: %d)...\n", aPacket->mLength);
+			LOG_DEBUG_CC1101("Reading data from FIFO (Len: %d)...", aPacket->mLength);
 			
 				// Read data packet
 			iohub_cc1101_read_burst_reg(aCtx, CC1101_RXFIFO, aPacket->mData, aPacket->mLength);
@@ -579,7 +579,7 @@ ret_code_t iohub_cc1101_receive_data(cc1101_ctx *aCtx, cc1101_packet_ctx *aPacke
 		}
 		else
 		{
-			LOG_DEBUG_CC1101("No data pending\n");
+			LOG_DEBUG_CC1101("No data pending");
 		}
 	}
 	

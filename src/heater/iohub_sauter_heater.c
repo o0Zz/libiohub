@@ -34,7 +34,7 @@ ret_code_t iohub_sauter_heater_send(sauter_heater *aCtx, BOOL afOn, float aTempe
 {
 	u8 buf[32] = {0x20/*STX*/, 0x5A,0xB5,0x07,0x52,0x00/*Mode*/,0x00/*Temp*/,0x00,0x54,0x00,0x00,0x00,0x62,0x00,0x56/*??*/,0x02/*??*/,0x70,0x00,0x00,0x00,0x08,0x0B,0x00/*CRC*/,0x77/*ETX*/};
 
-	float theDiff = (aTemperature - 12.0);
+	//float theDiff = (aTemperature - 12.0);
 	//u8 theTempIdx = (u8)(theDiff * 2.0);
 	
 	buf[SAUTER_HEATER_OFFSET_CRC] = iohub_sauter_heater_crc(buf, sizeof(buf) - 2); //-2 = Footer + CRC
@@ -46,7 +46,7 @@ ret_code_t iohub_sauter_heater_send(sauter_heater *aCtx, BOOL afOn, float aTempe
 
 ret_code_t iohub_sauter_heater_read(sauter_heater *aCtx, BOOL *afOn, float *aTemperature, float *aBoostTimeMinute)
 {
-	
+	return SUCCESS;
 }
 
 /* -------------------------------------------------------------------- */

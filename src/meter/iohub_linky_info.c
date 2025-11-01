@@ -1,4 +1,5 @@
 #include "meter/iohub_linky_info.h"
+#include "utils/iohub_logs.h"
 
 //https://github.com/jaysee/teleInfo
 
@@ -119,7 +120,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 	
 	if (theLine != NULL)
 	{
-		//LOG_LINKY_DEBUG("%s\n", theLine);
+		//LOG_LINKY_DEBUG("%s", theLine);
 		
 		for (u8 i=0; i<TELEINFO_COUNT; i++)
 		{
@@ -177,7 +178,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 					aCtx->mTeleInfo[i] = atol(theValue);
 				}
 				
-				//LOG_LINKY_DEBUG("FOUND %d -> ValueStr: %s, ValueInt: %lu\n", i, theValue, aCtx->mTeleInfo[i]);
+				//LOG_LINKY_DEBUG("FOUND %d -> ValueStr: %s, ValueInt: %lu", i, theValue, aCtx->mTeleInfo[i]);
 				
 				if (i == MOTDETAT) //Last line
 				{
@@ -189,7 +190,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 			}
 		}
 		
-		IOHUB_LOG_ERROR("TeleInfo: Line not handled: %s\n", theLine);
+		IOHUB_LOG_ERROR("TeleInfo: Line not handled: %s", theLine);
 	}
 	
 	return false;
@@ -201,7 +202,7 @@ u32 iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 {
 	if (teleinfo_type >= TELEINFO_COUNT)
 	{
-		IOHUB_LOG_ERROR("TeleInfo: Get incorrect type: %d\n", teleinfo_type);
+		IOHUB_LOG_ERROR("TeleInfo: Get incorrect type: %d", teleinfo_type);
 		return 0;
 	}
 	

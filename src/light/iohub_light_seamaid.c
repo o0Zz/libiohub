@@ -35,7 +35,7 @@ int iohub_light_seamaid_init(light_seamaid *aCtx, u8 aGPIOTx)
 
     aCtx->mDigitalPinTx = aGPIOTx;
 	
-    if (aCtx->mDigitalPinTx != PIN_INVALID)
+    if (aCtx->mDigitalPinTx != IOHUB_GPIO_PIN_INVALID)
         iohub_digital_set_pin_mode(aCtx->mDigitalPinTx, PinMode_Output);
 	
     return theRet;
@@ -95,8 +95,8 @@ void iohub_light_seamaid_send(light_seamaid *aCtx, u16 anAddr, u8 aCmd)
 		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);
 		DRV_LIGHT_SEAMAID_WRITE(PinLevel_Low);
 		iohub_time_delay_us(DRV_LIGHT_SEAMAID_BIT_HIGH);   
-		
-		time_delay_ms(2);
+
+		iohub_time_delay_ms(2);
 	}
 }
 
@@ -112,9 +112,6 @@ static u16 iohub_light_seamaid_read_timing(light_seamaid *aCtx)
 
 BOOL iohub_light_seamaid_read_bit(light_seamaid *aCtx, u8 *aBit) 
 {
-	BOOL theRet = FALSE;
-    u32 theTimeMs;
-
 	u32 theTime1Ms = iohub_light_seamaid_read_timing(aCtx);
 	u32 theTime2Ms = iohub_light_seamaid_read_timing(aCtx);
 	
@@ -146,7 +143,7 @@ BOOL iohub_light_seamaid_read(light_seamaid *aCtx, u16 *anAddr, u8 *aCmd)
 	{
 		if (!iohub_light_seamaid_read_bit(aCtx, &theBit))
 		{
-			//LOG_ERROR("Invalid bit at idx %d\r\n", i);
+			//LOG_ERROR("Invalid bit at idx %d", i);
 			return FALSE;
 		}
 		
@@ -158,7 +155,7 @@ BOOL iohub_light_seamaid_read(light_seamaid *aCtx, u16 *anAddr, u8 *aCmd)
 	{
 		if (!iohub_light_seamaid_read_bit(aCtx, &theBit))
 		{
-			//LOG_ERROR("Invalid bit at idx %d\r\n", i);
+			//LOG_ERROR("Invalid bit at idx %d", i);
 			return FALSE;
 		}
 		

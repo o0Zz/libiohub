@@ -1,5 +1,7 @@
 #include "heatpump/iohub_heatpump_mitsubishi.h"
 #include "utils/iohub_types.h"
+#include "utils/iohub_logs.h"
+#include "utils/iohub_time.h"
 
 //https://github.com/hadleyrich/MQMitsi/blob/master/mitsi.py
 //https://github.com/SwiCago/HeatPump/blob/master/src/HeatPump.cpp
@@ -83,9 +85,9 @@ typedef struct heatpump_pkt_s
 		u8 theByte = 0xFF;
 		u16 theSize = 0;
 		
-		u32 theStartTime = TIMER_START();
+		u32 theStartTime = IOHUB_TIMER_START();
 		
-		while ((TIMER_ELAPSED(theStartTime) < aTimeoutMs) && (theSize == 0))
+		while ((IOHUB_TIMER_ELAPSED(theStartTime) < aTimeoutMs) && (theSize == 0))
 		{
 			theSize = 1;
 			iohub_uart_read(aCtx->mUartCtx, &theByte, &theSize);
@@ -93,11 +95,11 @@ typedef struct heatpump_pkt_s
 		
 		if (theSize == 1)
 		{
-			LOG_DEBUG("Mitsu ReadByte: %X\n", theByte);
+			LOG_DEBUG("Mitsu ReadByte: %X", theByte);
 			return theByte;
 		}
 		
-		log_error("Mitsu ReadByte Timeout (%d ms)\n", aTimeoutMs);
+		IOHUB_LOG_ERROR("Mitsu ReadByte Timeout (%d ms)", aTimeoutMs);
 		return MITSUBISHI_BYTE_TIMEOUT;
 	}
 
@@ -105,30 +107,39 @@ typedef struct heatpump_pkt_s
 		
 	static ret_code_t iohub_heatpump_mitsubishi_read_pkt(heatpump_mitsubishi_ctx *aCtx, heatpump_pkt *aPkt)
 	{
-		int theStartByte = 0;
-		while (theStartByte != 0xFC)
+		int theByte = 0x00;
+		while (theByte != 0xFC)
 		{
-			theStartByte = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
-			if (theStartByte == MITSUBISHI_BYTE_TIMEOUT)
+			theByte = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
+			if (theByte == MITSUBISHI_BYTE_TIMEOUT)
 				return E_TIMEOUT;
 		}
 		
-		aPkt->mCmd = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
-		if (aPkt->mCmd == MITSUBISHI_BYTE_TIMEOUT)
+		theByte = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
+		if (theByte == MITSUBISHI_BYTE_TIMEOUT)
 			return E_TIMEOUT;
-			
+
+		aPkt->mCmd = theByte & 0xFF;
+
 		if (iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS) != 0x01)
 			return E_INVALID_REPLY;
 		
 		if (iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS) != 0x30)
 			return E_INVALID_REPLY;
 		
-		aPkt->mSize = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
-		if (aPkt->mSize == MITSUBISHI_BYTE_TIMEOUT)
+		theByte = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
+		if (theByte == MITSUBISHI_BYTE_TIMEOUT)
 			return E_TIMEOUT;
-		
+
+		aPkt->mSize = theByte & 0xFF;
+
 		for (int i=0; i<aPkt->mSize; i++)
-			aPkt->mData[i] = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS) & 0xFF;
+		{
+			theByte = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS);
+			if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+				return E_TIMEOUT;
+			aPkt->mData[i] = theByte & 0xFF;
+		}
 		
 		int theChecksum = iohub_heatpump_mitsubishi_read_byte(aCtx, MITSUBISHI_TIMEOUT_MS) & 0xFF;
 		if (theChecksum == MITSUBISHI_BYTE_TIMEOUT)
@@ -147,7 +158,7 @@ typedef struct heatpump_pkt_s
 		memcpy(&theBuffer[5], aPkt->mData, aPkt->mSize);
 		theBuffer[5 + aPkt->mSize] = iohub_heatpump_mitsubishi_crc(theBuffer, aPkt->mSize + 5);
 		
-		LOG_DEBUG("Mitsu Write:\n");
+		LOG_DEBUG("Mitsu Write:");
 		LOG_BUFFER(theBuffer, aPkt->mSize + 6);
 		
 		return iohub_uart_write(aCtx->mUartCtx, theBuffer, aPkt->mSize + 6);
@@ -172,14 +183,14 @@ typedef struct heatpump_pkt_s
 			{	
 				if (thePacket.mCmd == (0x5A | MITSUBISHI_PROTO_REPLY))
 				{
-					LOG_DEBUG("Mitsubishi connected !\n");
+					LOG_DEBUG("Mitsubishi connected !");
 					aCtx->mfConnected = TRUE;
 					return SUCCESS;
 				}
 			}
 		}
-		
-		log_error("Mitsubishi not connected !\n");
+
+		IOHUB_LOG_ERROR("Mitsubishi not connected");
 		return E_INVALID_NOT_CONNECTED;
 	}
 
@@ -213,7 +224,7 @@ ret_code_t iohub_heatpump_mitsubishi_send(heatpump_mitsubishi_ctx *aCtx, IoHubHe
 	if (!aCtx->mfConnected)
 	{
 		theRet = iohub_heatpump_mitsubishi_connect(aCtx);
-		if (theRet != SUCCESS);
+		if (theRet != SUCCESS)
 			return theRet;
 	}
 	
@@ -268,7 +279,7 @@ ret_code_t iohub_heatpump_mitsubishi_read(heatpump_mitsubishi_ctx *aCtx, IoHubHe
 	if (!aCtx->mfConnected)
 	{
 		theRet = iohub_heatpump_mitsubishi_connect(aCtx);
-		if (theRet != SUCCESS);
+		if (theRet != SUCCESS)
 			return theRet;
 	}
 
@@ -329,7 +340,7 @@ ret_code_t iohub_heatpump_mitsubishi_read_room_temperature(heatpump_mitsubishi_c
 	if (!aCtx->mfConnected)
 	{
 		theRet = iohub_heatpump_mitsubishi_connect(aCtx);
-		if (theRet != SUCCESS);
+		if (theRet != SUCCESS)
 			return theRet;
 	}
 

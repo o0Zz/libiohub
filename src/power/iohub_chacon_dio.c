@@ -55,7 +55,7 @@ int iohub_chacon_dio_init(chacon_dio *aCtx, u8 aGPIOTx)
     aCtx->mDigitalPinTx = aGPIOTx;
 
 #ifdef ARDUINO
-    if (aCtx->mDigitalPinTx == PIN_INVALID)
+    if (aCtx->mDigitalPinTx == IOHUB_PIN_INVALID)
         aCtx->mDigitalPinTx = 4; //Default pin on arduino !
 #endif
 

@@ -38,7 +38,7 @@ ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, 
 	if (aMode != UART_8N1)
 		log_error("Error: Serial not supporting this mode: %d", aMode);
 	else
-		LOG_UART_DEBUG("Serial opened (RX=%d TX=%d Baud=%d)\n", aRxPin, aTxPin, aBaudrate);
+		LOG_UART_DEBUG("Serial opened (RX=%d TX=%d Baud=%d)", aRxPin, aTxPin, aBaudrate);
 }
 
 /* ------------------------------------------------------------- */

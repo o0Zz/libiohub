@@ -23,11 +23,11 @@ volatile static u32 				gDurationUs = 0;
 
 		for(u8 i=0; i<gDigitalReceiver->mPluginCount; i++)
 		{
-			if (!IS_BIT_SET(gDigitalReceiver->mPacketReady, i))
+			if (!IOHUB_GPIO_IS_BIT_SET(gDigitalReceiver->mPacketReady, i))
 			{
 				if (gDigitalReceiver->mInterfaceList[i]->detectPacket(gDigitalReceiver->mInterfaceCtx[i], (u16)theDurationUs))
 				{
-					BIT_SET(gDigitalReceiver->mPacketReady, i);
+					IOHUB_GPIO_BIT_SET(gDigitalReceiver->mPacketReady, i);
 				}
 			}
 		}
@@ -60,7 +60,7 @@ void iohub_digital_async_receiver_start(digital_async_receiver *aCtx)
 	
 	ret_code_t ret = iohub_attach_interrupt((gpio_num_t)aCtx->mPin,
 										   digital_async_receiver_handle_interrupt, 
-										   CHANGE, 
+										   IOHUB_GPIO_INT_TYPE_CHANGE, 
 										   NULL);
 	if (ret != SUCCESS) {
 		IOHUB_LOG_ERROR("Failed to attach interrupt to pin %d: %s", aCtx->mPin, esp_err_to_name(ret));
@@ -105,7 +105,7 @@ BOOL iohub_digital_async_receiver_has_packet_available(digital_async_receiver *a
 	{	
 		for (u8 i=0; i<(sizeof(aCtx->mPacketReady) * 8); i++)
 		{
-			if (IOHUB_IS_BIT_SET(aCtx->mPacketReady, i))
+			if (IOHUB_GPIO_IS_BIT_SET(aCtx->mPacketReady, i))
 			{
 				*aPluginID = aCtx->mInterfaceList[i]->ID;
 				IOHUB_LOG_ERROR("Packet available: %X", *aPluginID);
@@ -126,7 +126,7 @@ void iohub_digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u
 		if (aCtx->mInterfaceList[i]->ID == aPluginID)
 		{
 			aCtx->mInterfaceList[i]->packetHandled(aCtx->mInterfaceCtx[i]);
-			IOHUB_BIT_CLEAR(aCtx->mPacketReady, i);
+			IOHUB_GPIO_BIT_CLEAR(aCtx->mPacketReady, i);
 			return;
 		}
 	}

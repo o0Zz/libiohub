@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 
+option(IOHUB_PLATFORM "Select the IOHUB platform")
+
 # Require user to define IOHUB_PLATFORM at configure time
-if(NOT DEFINED IOHUB_PLATFORM)
+if(NOT IOHUB_PLATFORM OR IOHUB_PLATFORM STREQUAL "")
     message(FATAL_ERROR "You must define IOHUB_PLATFORM (e.g. -DIOHUB_PLATFORM=ESP32, ARDUINO, RPI, MPSSE)")
 endif()
 
@@ -26,7 +28,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/platform/${IOHUB_PLATFORM_LOWER}")
     )
     list(APPEND IOHUB_SRC ${IOHUB_PLATFORM_SRC})
 else()
-    message(FATAL_ERROR "Unknown platform: ${IOHUB_PLATFORM} (no matching folder in /platforms)")
+    message(FATAL_ERROR "Unknown platform: ${IOHUB_PLATFORM} (no matching folder in ${CMAKE_CURRENT_SOURCE_DIR}/platform/)")
 endif()
 
 # Create static library target
@@ -47,3 +49,23 @@ target_compile_definitions(iohub
     PUBLIC
         IOHUB_PLATFORM_${IOHUB_PLATFORM_UPPER}=1
 )
+
+# Platform-specific configurations
+if(IOHUB_PLATFORM_UPPER STREQUAL "ESP32")
+    # For ESP-IDF builds, we need to integrate with the ESP-IDF component system
+    if(IDF_TARGET)
+        # ESP-IDF build system detected
+        # Link with ESP-IDF I2C driver component
+        target_link_libraries(iohub
+            PRIVATE
+                driver
+                esp_common
+        )
+        
+        # Add ESP-IDF specific compile definitions
+        target_compile_definitions(iohub
+            PRIVATE
+                ESP_PLATFORM=1
+        )
+    endif()
+endif()

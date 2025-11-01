@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/iohub_errors.h"
+#include "utils/iohub_types.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_timer.h"
@@ -38,7 +40,9 @@ static inline void iohub_platform_init()
 #define iohub_interrupts_disable()                                 portENTER_CRITICAL(NULL)
 #define iohub_interrupts_enable()                                  portEXIT_CRITICAL(NULL)
 
-#define CHANGE GPIO_INTR_ANYEDGE
+#define IOHUB_GPIO_INT_TYPE_CHANGE       GPIO_INTR_ANYEDGE
+#define IOHUB_GPIO_INT_TYPE_FALLING      GPIO_INTR_NEGEDGE
+#define IOHUB_GPIO_INT_TYPE_RISING       GPIO_INTR_POSEDGE
 
 /* GPIO Interrupt functions for ESP32 */
 static inline ret_code_t iohub_attach_interrupt(gpio_num_t pin, gpio_isr_t isr_handler, gpio_int_type_t intr_type, void* arg)
@@ -68,7 +72,7 @@ static inline ret_code_t iohub_attach_interrupt(gpio_num_t pin, gpio_isr_t isr_h
     }
     
     // Add ISR handler
-    esp_err_t ret = gpio_isr_handler_add(pin, isr_handler, arg);
+    ret = gpio_isr_handler_add(pin, isr_handler, arg);
     return (ret_code_t)ret;
 }
 

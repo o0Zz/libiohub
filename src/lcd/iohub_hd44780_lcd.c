@@ -1,8 +1,5 @@
 #include "lcd/iohub_hd44780_lcd.h"
-
-#ifndef WIN32
-//#include <unistd.h>
-#endif
+#include "platform/iohub_platform.h"
 
 /*
 

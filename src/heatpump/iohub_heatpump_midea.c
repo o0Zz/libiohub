@@ -1,4 +1,5 @@
 #include "heatpump/iohub_heatpump_midea.h"
+#include "utils/iohub_logs.h"
 
 #define DRV_CLIM_R51L1_BGE_RECV_ACCURACY     0.2
 
@@ -11,6 +12,15 @@
 #define NEC_CLIM_RPT_SPACE	 	2250
 
 #define USE_PWM 			0
+
+//#define DEBUG 1
+#if defined(DEBUG)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_BUFFER(...)				IOHUB_LOG_BUFFER(__VA_ARGS__)
+#else
+#	define LOG_DEBUG(...)				do{}while(0)
+#	define LOG_BUFFER(...)				do{}while(0)
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -93,7 +103,7 @@ int iohub_heatpump_midea_init(heatpump_midea *aCtx, u32 aGPIOTx)
 
 	aCtx->mDigitalPinTx = aGPIOTx;
 
-	if (aCtx->mDigitalPinTx != PIN_INVALID)
+	if (aCtx->mDigitalPinTx != IOHUB_GPIO_PIN_INVALID)
 		iohub_digital_set_pin_mode(aCtx->mDigitalPinTx, PinMode_Output);
 
  
@@ -187,10 +197,10 @@ int iohub_heatpump_midea_send(heatpump_midea *aCtx, IoHubHeatpumpAction anAction
 	theData[4] = theValue;
 	theData[5] = (theValue ^ 0xFF);
  
-	LOG_DEBUG("Sending\r\n");
+	LOG_DEBUG("Sending");
 	LOG_BUFFER(theData, sizeof(theData));
 	
-	for (byte k = 0; k < 2; k++) //Send code 2 times
+	for (u8 k = 0; k < 2; k++) //Send code 2 times
 		iohub_heatpump_midea_send_nec(aCtx, theData);
 
 	return SUCCESS;
@@ -243,9 +253,9 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *aCtx, IoHubHeatpumpAction *anActi
 	iohub_heatpump_midea_read_timing(aCtx); //NEC_CLIM_HDR_MARK
 	iohub_heatpump_midea_read_timing(aCtx); //NEC_CLIM_HDR_SPACE
 
-	for (byte i = 0; i < sizeof(theData); i++)
+	for (u8 i = 0; i < sizeof(theData); i++)
 	{
-		for (byte k = 0; k < 8; k++)
+		for (u8 k = 0; k < 8; k++)
 		{
 			if (!iohub_heatpump_midea_read_bit(aCtx, &theBit))
 				return FALSE;
@@ -255,7 +265,7 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *aCtx, IoHubHeatpumpAction *anActi
 		}
 	}
 	
-	LOG_DEBUG("Received:\r\n");
+	LOG_DEBUG("Received:");
 	LOG_BUFFER(theData, sizeof(theData));
 	
 	if (theData[0] != (theData[1] ^ 0xFF))
@@ -347,7 +357,7 @@ BOOL iohub_heatpump_midea_detectPacket(digital_async_receiver_interface_ctx *aCt
 		default:
 			if (theCtx->mTimingCount == sizeof(theCtx->mTimings)/sizeof(u16))
 			{
-				//LOG_DEBUG("heatpump_midea: Signal detected !\r\n");
+				//LOG_DEBUG("heatpump_midea: Signal detected !");
 				theCtx->mTimingReadIdx = 0;
 				return TRUE;
 			}
@@ -374,7 +384,7 @@ void iohub_heatpump_midea_dump_timings(heatpump_midea *aCtx)
 	for (u32 i=0; i<aCtx->mTimingCount; i++)
 		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
 		
-	LOG_DEBUG("\r\n");
+	LOG_DEBUG("");
 #endif
 }
 
