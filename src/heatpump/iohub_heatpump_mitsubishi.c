@@ -6,7 +6,7 @@
 //https://github.com/hadleyrich/MQMitsi/blob/master/mitsi.py
 //https://github.com/SwiCago/HeatPump/blob/master/src/HeatPump.cpp
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
@@ -183,7 +183,7 @@ typedef struct heatpump_pkt_s
 			{	
 				if (thePacket.mCmd == (0x5A | MITSUBISHI_PROTO_REPLY))
 				{
-					LOG_DEBUG("Mitsubishi connected !");
+					IOHUB_LOG_INFO("Mitsubishi connected !");
 					aCtx->mfConnected = TRUE;
 					return SUCCESS;
 				}
