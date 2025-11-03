@@ -201,7 +201,11 @@ ret_code_t iohub_heatpump_mitsubishi_init(heatpump_mitsubishi_ctx *aCtx, uart_ct
 	memset(aCtx, 0x00, sizeof(heatpump_mitsubishi_ctx));
 	
 	aCtx->mUartCtx = anUART;
-	
+
+	ret_code_t ret = iohub_uart_open(aCtx->mUartCtx, 2400, IOHubUartParity_Even, 1);
+	if (ret != SUCCESS)
+		return ret;
+
 	return iohub_heatpump_mitsubishi_connect(aCtx);
 }
 
@@ -209,7 +213,7 @@ ret_code_t iohub_heatpump_mitsubishi_init(heatpump_mitsubishi_ctx *aCtx, uart_ct
 
 void iohub_heatpump_mitsubishi_uninit(heatpump_mitsubishi_ctx *aCtx)
 {
-	//TODO
+	iohub_uart_close(aCtx->mUartCtx);
 }
 
 /* -------------------------------------------------------------- */

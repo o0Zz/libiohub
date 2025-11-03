@@ -11,7 +11,7 @@ function(get_iohub_sources ROOT_DIR PLATFORM_NAME OUT_VAR)
     file(GLOB_RECURSE PLATFORM_SRC 
         ${ROOT_DIR}/src/platform/${PLATFORM_LOWER}/*.c
     )
-    
+
     set(${OUT_VAR} ${COMMON_SRC} ${PLATFORM_SRC} PARENT_SCOPE)
 endfunction()
 

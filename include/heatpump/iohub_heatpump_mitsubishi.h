@@ -4,13 +4,7 @@
 #include "heatpump/iohub_heatpump_common.h"
 
 /*
-CN105 Pin	Signal
-	1		12V (Not used)
-	2		GND
-	3		5V
-	4		TX, data from heat pump
-	5		RX, data from thermostat
-	
+
 IMPORTANT:
 	UART is baud 2400 with parity EVEN !
 	DO not forget parity or it will not works !

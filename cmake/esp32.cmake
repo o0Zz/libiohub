@@ -3,7 +3,7 @@
 include(${CMAKE_CURRENT_LIST_DIR}/common.cmake)
 
 # Get ESP32 sources
-get_iohub_sources("${CMAKE_CURRENT_LIST_DIR}" "esp32" IOHUB_SOURCES)
+get_iohub_sources("${CMAKE_CURRENT_LIST_DIR}/.." "esp32" IOHUB_SOURCES)
 
 # Register ESP-IDF component
 idf_component_register(

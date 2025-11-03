@@ -6,20 +6,12 @@
 extern "C" {
 #endif
 
-#define UART_5N1 	501
-#define UART_6N1 	601
-#define UART_7N1 	701
-#define UART_8N1 	801
-
-#define UART_5E1	521
-#define UART_6E1    621
-#define UART_7E1    721
-#define UART_8E1    821
-
-#define UART_5O1 	511
-#define UART_6O1 	611
-#define UART_7O1 	711
-#define UART_8O1 	811
+typedef enum 
+{
+	IOHubUartParity_None = 0,
+	IOHubUartParity_Even,
+	IOHubUartParity_Odd
+}IOHubUartParity;
 
 #define UART_NOT_USED_PIN		0xFF
 
@@ -27,22 +19,24 @@ extern "C" {
 
 typedef struct uart_ctx_s
 {
-	u8 reserved;
+	void *mCtx;
 }uart_ctx;
 
 /* -------------------------------------------------------------- */
 
-ret_code_t 			iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode);
+ret_code_t 			iohub_uart_init(uart_ctx *ctx, u8 txPin, u8 rxPin);
 
-u16	    			iohub_uart_data_available(uart_ctx *aCtx);
+ret_code_t			iohub_uart_open(uart_ctx *ctx, u32 baudrate, IOHubUartParity parity, u8 stopBits);
 
-u8    				iohub_uart_read_byte(uart_ctx *aCtx);
+u16	    			iohub_uart_data_available(uart_ctx *ctx);
 
-ret_code_t    		iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize);
+u8    				iohub_uart_read_byte(uart_ctx *ctx);
 
-ret_code_t    		iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize);
+ret_code_t    		iohub_uart_read(uart_ctx *ctx, u8 *buffer, u16 *size);
 
-void    			iohub_uart_close(uart_ctx *aCtx);
+ret_code_t    		iohub_uart_write(uart_ctx *ctx, u8 *buffer, u16 size);
+
+void    			iohub_uart_close(uart_ctx *ctx);
 
 #ifdef __cplusplus
 }

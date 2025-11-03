@@ -47,63 +47,65 @@ const char sTeleInfoLabels[TELEINFO_COUNT][10] = {
 
 /* ----------------------------------------------------------------- */
 
-ret_code_t iohub_linky_info_init(linky_info *aCtx, u8 aRxPin)
+ret_code_t iohub_linky_info_init(linky_info *ctx, uart_ctx *uartCtx)
 {
-    memset(aCtx, 0x00, sizeof(linky_info));
+    memset(ctx, 0x00, sizeof(linky_info));
 
-	return iohub_uart_init(&aCtx->mUart, UART_NOT_USED_PIN, aRxPin, 1200, UART_8N1);
+	ctx->mUart = uartCtx;
+
+	return iohub_uart_open(ctx->mUart, 1200, IOHubUartParity_None, 1);
 }
 
 /* ----------------------------------------------------------------- */
 
-void iohub_linky_info_uninit(linky_info *aCtx)
+void iohub_linky_info_uninit(linky_info *ctx)
 {
-	iohub_uart_close(&aCtx->mUart);
+	iohub_uart_close(ctx->mUart);
 }
 
 /* ----------------------------------------------------- */
 
-	static const char *iohub_linky_info_read_line(linky_info *aCtx) 
+	static const char *iohub_linky_info_read_line(linky_info *ctx) 
 	{
 		/*
 			Line format:  "KEY VALUE CRC\r\n"
 		*/
-		
-		if (iohub_uart_data_available(&aCtx->mUart) > 0)
+
+		if (iohub_uart_data_available(ctx->mUart) > 0)
 		{
-			char theChar = iohub_uart_read_byte(&aCtx->mUart) & 0x7F;
-			
+			char theChar = iohub_uart_read_byte(ctx->mUart) & 0x7F;
+
 			if (theChar == 0x02 /*STX*/ || theChar == 0x03 /*ETX*/)
 				return NULL; //Nothing to do, skip STX and ETX and continue
-		
-			aCtx->mLine[aCtx->mLineIdx++] = theChar;
 
-			if (theChar == '\n' || (aCtx->mLineIdx >= sizeof(aCtx->mLine) - 1))
+			ctx->mLine[ctx->mLineIdx++] = theChar;
+
+			if (theChar == '\n' || (ctx->mLineIdx >= sizeof(ctx->mLine) - 1))
 			{
-				if (aCtx->mLineIdx > 7)
+				if (ctx->mLineIdx > 7)
 				{
-					//log_buffer(aCtx->mLine, aCtx->mLineIdx);
-				
-					aCtx->mLineIdx -= 3; // -3 = CRC + \r + \n
-					
+					//log_buffer(ctx->mLine, ctx->mLineIdx);
+
+					ctx->mLineIdx -= 3; // -3 = CRC + \r + \n
+
 					u8 crc_computed = 0x20;
-					for (u8 i=0; i<aCtx->mLineIdx; i++)
-						crc_computed += aCtx->mLine[i];
+					for (u8 i=0; i<ctx->mLineIdx; i++)
+						crc_computed += ctx->mLine[i];
 					crc_computed = (crc_computed & 0x3F) + 0x20;
-					
-					u8 crc_read = aCtx->mLine[aCtx->mLineIdx];
-					
-					aCtx->mLine[aCtx->mLineIdx - 1] = '\0'; //Cut the string just before the CRC (Replace Space by \0)
-					aCtx->mLineIdx = 0;
-					
+
+					u8 crc_read = ctx->mLine[ctx->mLineIdx];
+
+					ctx->mLine[ctx->mLineIdx - 1] = '\0'; //Cut the string just before the CRC (Replace Space by \0)
+					ctx->mLineIdx = 0;
+
 					if (crc_computed == crc_read)
-						return aCtx->mLine;
-				
-					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)", aCtx->mLine, crc_read, crc_computed);
+						return ctx->mLine;
+
+					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)", ctx->mLine, crc_read, crc_computed);
 				}
 				else
 				{
-					aCtx->mLineIdx = 0;
+					ctx->mLineIdx = 0;
 					IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)");
 				}
 			}
@@ -114,10 +116,10 @@ void iohub_linky_info_uninit(linky_info *aCtx)
 	
 /* ----------------------------------------------------- */
 
-BOOL iohub_linky_info_run(linky_info *aCtx) 
+BOOL iohub_linky_info_run(linky_info *ctx) 
 {
-	const char *theLine = iohub_linky_info_read_line(aCtx);
-	
+	const char *theLine = iohub_linky_info_read_line(ctx);
+
 	if (theLine != NULL)
 	{
 		//LOG_LINKY_DEBUG("%s", theLine);
@@ -131,58 +133,58 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 				if (i == OPTARIF)
 				{
 					if(strncmp("BASE", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)OPTARIF_BASE;
+						ctx->mTeleInfo[i] = (u32)OPTARIF_BASE;
 					else if(strncmp("HC..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)OPTARIF_HC;
+						ctx->mTeleInfo[i] = (u32)OPTARIF_HC;
 					else if(strncmp("EJP", theValue, 3) == 0)
-						aCtx->mTeleInfo[i] = (u32)OPTARIF_EJP;
+						ctx->mTeleInfo[i] = (u32)OPTARIF_EJP;
 					else if(strncmp("BBR", theValue, 3) == 0)
-						aCtx->mTeleInfo[i] = (u32)OPTARIF_BBRx;
+						ctx->mTeleInfo[i] = (u32)OPTARIF_BBRx;
 				}
 				else if (i == PTEC)
 				{
 					if(strncmp("TH..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_TH; 
+						ctx->mTeleInfo[i] = (u32)PTEC_TH; 
 					else if(strncmp("HC..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HC;  
+						ctx->mTeleInfo[i] = (u32)PTEC_HC;  
 					else if(strncmp("HP..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HP;  
+						ctx->mTeleInfo[i] = (u32)PTEC_HP;  
 					else if(strncmp("HN..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HN; 
+						ctx->mTeleInfo[i] = (u32)PTEC_HN; 
 					else if(strncmp("PM..", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_PM;  
+						ctx->mTeleInfo[i] = (u32)PTEC_PM;  
 					else if(strncmp("HCJB", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HCJB;
+						ctx->mTeleInfo[i] = (u32)PTEC_HCJB;
 					else if(strncmp("HCJW", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HCJW;
+						ctx->mTeleInfo[i] = (u32)PTEC_HCJW;
 					else if(strncmp("HCJR", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HCJR;
+						ctx->mTeleInfo[i] = (u32)PTEC_HCJR;
 					else if(strncmp("HPJB", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HPJB;
+						ctx->mTeleInfo[i] = (u32)PTEC_HPJB;
 					else if(strncmp("HPJW", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HPJW;
+						ctx->mTeleInfo[i] = (u32)PTEC_HPJW;
 					else if(strncmp("HPJR", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)PTEC_HPJR;
+						ctx->mTeleInfo[i] = (u32)PTEC_HPJR;
 				}
 				else if (i == DEMAIN)
 				{
 					if(strncmp("BLEU", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)DEMAIN_BLEU; 
+						ctx->mTeleInfo[i] = (u32)DEMAIN_BLEU; 
 					else if(strncmp("BLAN", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)DEMAIN_BLANC;  
+						ctx->mTeleInfo[i] = (u32)DEMAIN_BLANC;  
 					else if(strncmp("ROUG", theValue, 4) == 0)
-						aCtx->mTeleInfo[i] = (u32)DEMAIN_ROUGE;  
+						ctx->mTeleInfo[i] = (u32)DEMAIN_ROUGE;  
 				}
 				else
 				{
-					aCtx->mTeleInfo[i] = atol(theValue);
+					ctx->mTeleInfo[i] = atol(theValue);
 				}
-				
-				//LOG_LINKY_DEBUG("FOUND %d -> ValueStr: %s, ValueInt: %lu", i, theValue, aCtx->mTeleInfo[i]);
-				
+
+				//LOG_LINKY_DEBUG("FOUND %d -> ValueStr: %s, ValueInt: %lu", i, theValue, ctx->mTeleInfo[i]);
+
 				if (i == MOTDETAT) //Last line
 				{
-					if (++aCtx->mNumberOfRefresh >= 2) //Before returning a valid state, be sure we have enough information
+					if (++ctx->mNumberOfRefresh >= 2) //Before returning a valid state, be sure we have enough information
 						return true;
 				}
 	
@@ -198,7 +200,7 @@ BOOL iohub_linky_info_run(linky_info *aCtx)
 
 /* ----------------------------------------------------- */
 
-u32 iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
+u32 iohub_linky_info_get(linky_info *ctx, teleinfo_t teleinfo_type)
 {
 	if (teleinfo_type >= TELEINFO_COUNT)
 	{
@@ -206,14 +208,14 @@ u32 iohub_linky_info_get(linky_info *aCtx, teleinfo_t teleinfo_type)
 		return 0;
 	}
 	
-	return aCtx->mTeleInfo[teleinfo_type];
+	return ctx->mTeleInfo[teleinfo_type];
 }
 
 /* ----------------------------------------------------- */
 
-void iohub_linky_info_get_all(linky_info *aCtx, u32 aTeleInfo[TELEINFO_COUNT])
+void iohub_linky_info_get_all(linky_info *ctx, u32 aTeleInfo[TELEINFO_COUNT])
 {
-	memcpy(aTeleInfo, aCtx->mTeleInfo, sizeof(aCtx->mTeleInfo));
+	memcpy(aTeleInfo, ctx->mTeleInfo, sizeof(ctx->mTeleInfo));
 }
 
 /* ----------------------------------------------------- */

@@ -81,7 +81,7 @@ typedef enum
 
 typedef struct linky_info_s
 {	
-	uart_ctx 		mUart;
+	uart_ctx 		*mUart;
 	char 			mLine[32];
 	u8 				mLineIdx;
 	u32				mNumberOfRefresh;
@@ -90,7 +90,7 @@ typedef struct linky_info_s
 
 /* -------------------------------------------------------------- */
 
-ret_code_t		iohub_linky_info_init(linky_info *aCtx, u8 aRxPin);
+ret_code_t		iohub_linky_info_init(linky_info *aCtx, uart_ctx *uartCtx);
 
 void    		iohub_linky_info_uninit(linky_info *aCtx);
 

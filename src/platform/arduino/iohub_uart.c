@@ -24,21 +24,51 @@
 
 static SoftwareSerial *sSerial = NULL;
 
-ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
+ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 txPin, u8 rxPin)
 {
 	memset(aCtx, 0x00, sizeof(aCtx));
+
+	sSerial = new SoftwareSerial(rxPin, txPin);
+
+	pinMode( rxPin, INPUT );
+	pinMode( txPin, OUTPUT );
+}
+
+/* ------------------------------------------------------------- */
+
+ret_code_t iohub_uart_open(uart_ctx *ctx, u32 baudrate, IOHubUartParity parity, u8 stopBits)
+{
+	uint16_t configuration = 0;
+
+	// Data bits
+	configuration += 8 * 100; // 8 data bits
+
+	// Parity
+	switch(parity) {
+		case IOHubUartParity_None:
+			configuration += 0 * 10;
+			break;
+		case IOHubUartParity_Odd:
+			configuration += 1 * 10;
+			break;
+		case IOHubUartParity_Even:
+			configuration += 2 * 10;
+			break;
+	}
+
+	// Stop bits
+	configuration += stopBits;
+
+	if (parity != IOHubUartParity_None)
+	{
+		IOHUB_LOG_ERROR("Error: Serial not supporting this parity: %d", parity);
+		return E_INVALID_PARAMETERS;
+	}
 	
-	sSerial = new SoftwareSerial(aRxPin, aTxPin);
-	
-	pinMode( aRxPin, INPUT );
-	pinMode( aTxPin, OUTPUT );
-	
-	sSerial->begin( aBaudrate );
-	
-	if (aMode != UART_8N1)
-		log_error("Error: Serial not supporting this mode: %d", aMode);
-	else
-		LOG_UART_DEBUG("Serial opened (RX=%d TX=%d Baud=%d)", aRxPin, aTxPin, aBaudrate);
+	sSerial->begin(baudrate, configuration);
+	LOG_UART_DEBUG("Serial opened on baudrate %d", baudrate);
+
+	return SUCCESS;
 }
 
 /* ------------------------------------------------------------- */

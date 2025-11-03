@@ -678,11 +678,39 @@ static CustomSoftwareSerial sSerial;
 
 /* ------------------------------------------------------------- */
 
-ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin, u32 aBaudrate, u16 aMode)
+ret_code_t iohub_uart_init(uart_ctx *aCtx, u8 aTxPin, u8 aRxPin)
 {
 	sSerial.setTX(aTxPin);
 	sSerial.setRX(aRxPin);
-	sSerial.begin(aBaudrate, aMode);
+}
+
+/* ------------------------------------------------------------- */
+
+ret_code_t iohub_uart_open(uart_ctx *ctx, u32 baudrate, IOHubUartParity parity, u8 stopBits)
+{
+    uint16_t configuration = 0;
+
+    // Data bits
+    configuration += 8 * 100; // 8 data bits
+
+    // Parity
+    switch(parity) {
+        case IOHubUartParity_None:
+            configuration += 0 * 10;
+            break;
+        case IOHubUartParity_Odd:
+            configuration += 1 * 10;
+            break;
+        case IOHubUartParity_Even:
+            configuration += 2 * 10;
+            break;
+    }
+
+    // Stop bits
+    configuration += stopBits;
+
+    sSerial.begin(baudrate, configuration);
+    return SUCCESS;
 }
 
 /* ------------------------------------------------------------- */
