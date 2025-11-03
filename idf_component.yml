@@ -1,0 +1,9 @@
+name: libiohub
+version: "1.0.0"
+description: "IOHub library for ESP32 and other platforms"
+url: "https://github.com/o0Zz/libiohub"
+dependencies:
+  # ESP-IDF dependencies
+  esp_common: ">=5.0.0"
+  driver: ">=5.0.0"
+  esp_timer: ">=5.0.0"

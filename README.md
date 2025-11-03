@@ -54,6 +54,9 @@ int main(void)
 }
 ```
 
+## Prerequisite
+    - Linux/Windows FTDI Driver: https://ftdichip.com/drivers/vcp-drivers/
+
 ## ⚙️ Building
 
 You can build libiohub with CMake or integrate it directly into your own project’s build system.
@@ -102,3 +105,4 @@ Implement the iohub_climate_driver_t interface
 |ESP32       |✅ |✅  |✅  |Uses ESP-IDF HAL|
 |Arduino     |✅ |✅  |✅  |Standard Arduino APIs|
 |Raspberry Pi|✅ |✅  |✅  |Uses WiringPi / BCM2835|
+|Win/Linux (MPSSE)|✅ |✅  |✅  |Uses FTDI driver|

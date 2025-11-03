@@ -18,3 +18,8 @@ add_library(iohub STATIC ${IOHUB_SOURCES})
 # Configure target
 target_include_directories(iohub PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 configure_iohub_target(iohub ${IOHUB_PLATFORM})
+
+# Link mpsse library only for MPSSE platform
+if(IOHUB_PLATFORM STREQUAL "MPSSE")
+    target_link_libraries(iohub PUBLIC mpsse)
+endif()
