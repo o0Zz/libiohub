@@ -26,8 +26,8 @@ typedef struct heatpump_midea_s
 int     								iohub_heatpump_midea_init(heatpump_midea *aCtx, u32 aGPIOTx);
 void    								iohub_heatpump_midea_uninit(heatpump_midea *aCtx);
 
-int										iohub_heatpump_midea_send(heatpump_midea *aCtx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode);
-BOOL    								iohub_heatpump_midea_read(heatpump_midea *aCtx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode);
+int										iohub_heatpump_midea_set_state(heatpump_midea *aCtx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode);
+BOOL    								iohub_heatpump_midea_get_state(heatpump_midea *aCtx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode);
 
 const digital_async_receiver_interface 	*iohub_heatpump_midea_get_interface(void);
 

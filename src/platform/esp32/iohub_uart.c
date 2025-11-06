@@ -155,7 +155,7 @@ ret_code_t iohub_uart_write(uart_ctx *ctx, u8 *buffer, u16 size)
     }
 
     // Wait for transmission to complete
-    esp_err_t ret = uart_wait_tx_done(ESP_UART_NUM, pdMS_TO_TICKS(100));
+    esp_err_t ret = uart_wait_tx_done(ESP_UART_NUM, pdMS_TO_TICKS(1000));
     if (ret != ESP_OK) {
         IOHUB_LOG_WARNING("UART Write timeout: %s", esp_err_to_name(ret));
         // Don't return error for timeout, data was queued successfully

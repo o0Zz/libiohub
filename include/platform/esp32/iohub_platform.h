@@ -12,7 +12,7 @@
 
 static inline void iohub_platform_init()
 {
-	//Nothing to do
+	esp_log_level_set("iohub", ESP_LOG_DEBUG);
 }
 
 #define IOHUB_LOG_DEBUG(...)			ESP_LOGD("iohub", __VA_ARGS__)

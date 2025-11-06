@@ -69,42 +69,42 @@ u8 kHeatpumpFanSpeedMideaDryAuto = 0x1F;
 
 /* ----------------------------------------------------------------- */
 
-void iohub_heatpump_midea_mark(heatpump_midea *aCtx, u16 aTimeUs)
+void iohub_heatpump_midea_mark(heatpump_midea *ctx, u16 aTimeUs)
 {
 #if defined(USE_PWM) && USE_PWM
 	TIMER_ENABLE_PWM;
 	iohub_time_delay_us(aTimeUs);
 #else
-	iohub_digital_write(aCtx->mDigitalPinTx, PinLevel_High);
+	iohub_digital_write(ctx->mDigitalPinTx, PinLevel_High);
 	iohub_time_delay_us(aTimeUs);
 #endif
 }
 
 /* ----------------------------------------------------------------- */
 
-void iohub_heatpump_midea_space(heatpump_midea *aCtx, u16 aTimeUs)
+void iohub_heatpump_midea_space(heatpump_midea *ctx, u16 aTimeUs)
 {
 #if defined(USE_PWM) && USE_PWM
 	TIMER_DISABLE_PWM;
 	iohub_time_delay_us(aTimeUs);
 #else
-	iohub_digital_write(aCtx->mDigitalPinTx, PinLevel_Low);
+	iohub_digital_write(ctx->mDigitalPinTx, PinLevel_Low);
 	iohub_time_delay_us(aTimeUs);
 #endif
 }
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_init(heatpump_midea *aCtx, u32 aGPIOTx)
+int iohub_heatpump_midea_init(heatpump_midea *ctx, u32 aGPIOTx)
 {
 	int theRet = SUCCESS;
 
-	memset(aCtx, 0x00, sizeof(heatpump_midea));
+	memset(ctx, 0x00, sizeof(heatpump_midea));
 
-	aCtx->mDigitalPinTx = aGPIOTx;
+	ctx->mDigitalPinTx = aGPIOTx;
 
-	if (aCtx->mDigitalPinTx != IOHUB_GPIO_PIN_INVALID)
-		iohub_digital_set_pin_mode(aCtx->mDigitalPinTx, PinMode_Output);
+	if (ctx->mDigitalPinTx != IOHUB_GPIO_PIN_INVALID)
+		iohub_digital_set_pin_mode(ctx->mDigitalPinTx, PinMode_Output);
 
  
 	return theRet;
@@ -112,13 +112,13 @@ int iohub_heatpump_midea_init(heatpump_midea *aCtx, u32 aGPIOTx)
 
 /* ----------------------------------------------------------------- */
 
-void iohub_heatpump_midea_uninit(heatpump_midea *aCtx)
+void iohub_heatpump_midea_uninit(heatpump_midea *ctx)
 {
 }
 
 /* ----------------------------------------------------------------- */
 
-void iohub_heatpump_midea_send_nec(heatpump_midea *aCtx, const u8 aData[6])
+void iohub_heatpump_midea_send_nec(heatpump_midea *ctx, const u8 aData[6])
 {
 	u8 theData[6];
 	
@@ -128,31 +128,31 @@ void iohub_heatpump_midea_send_nec(heatpump_midea *aCtx, const u8 aData[6])
 
 	memcpy(theData, aData, sizeof(theData));
 	
-	iohub_heatpump_midea_mark(aCtx, NEC_CLIM_HDR_MARK);
-	iohub_heatpump_midea_space(aCtx, NEC_CLIM_HDR_SPACE);
+	iohub_heatpump_midea_mark(ctx, NEC_CLIM_HDR_MARK);
+	iohub_heatpump_midea_space(ctx, NEC_CLIM_HDR_SPACE);
 	
 	for (u8 i = 0; i < sizeof(theData); i++)
 	{
 		for (u8 k = 0; k < 8; k++)
 		{
-			iohub_heatpump_midea_mark(aCtx, NEC_CLIM_BIT_MARK);
+			iohub_heatpump_midea_mark(ctx, NEC_CLIM_BIT_MARK);
 		
 			if (theData[i] & 0x80)
-				iohub_heatpump_midea_space(aCtx, NEC_CLIM_ONE_SPACE);
+				iohub_heatpump_midea_space(ctx, NEC_CLIM_ONE_SPACE);
 			else
-				iohub_heatpump_midea_space(aCtx, NEC_CLIM_ZERO_SPACE);
+				iohub_heatpump_midea_space(ctx, NEC_CLIM_ZERO_SPACE);
 			
 			theData[i] <<= 1;
 		}
 	}
 	
-	iohub_heatpump_midea_mark(aCtx, NEC_CLIM_BIT_MARK);
-	iohub_heatpump_midea_space(aCtx, NEC_CLIM_HDR_SPACE);
+	iohub_heatpump_midea_mark(ctx, NEC_CLIM_BIT_MARK);
+	iohub_heatpump_midea_space(ctx, NEC_CLIM_HDR_SPACE);
 }
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_send(heatpump_midea *aCtx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode)
+int iohub_heatpump_midea_send(heatpump_midea *ctx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode)
 {
 	u8				theValue = 0;
 	u8	 			theData[6] = {0x00};
@@ -201,31 +201,31 @@ int iohub_heatpump_midea_send(heatpump_midea *aCtx, IoHubHeatpumpAction anAction
 	LOG_BUFFER(theData, sizeof(theData));
 	
 	for (u8 k = 0; k < 2; k++) //Send code 2 times
-		iohub_heatpump_midea_send_nec(aCtx, theData);
+		iohub_heatpump_midea_send_nec(ctx, theData);
 
 	return SUCCESS;
 }
 
 /* ----------------------------------------------------- */
 
-static u16 iohub_heatpump_midea_read_timing(heatpump_midea *aCtx) 
+static u16 iohub_heatpump_midea_read_timing(heatpump_midea *ctx) 
 {
-	LOG_DEBUG("%d, ", aCtx->mTimings[aCtx->mTimingReadIdx]);
-	return aCtx->mTimings[aCtx->mTimingReadIdx++];
+	LOG_DEBUG("%d, ", ctx->mTimings[ctx->mTimingReadIdx]);
+	return ctx->mTimings[ctx->mTimingReadIdx++];
 }
 
 /* ----------------------------------------------------- */
 
-BOOL iohub_heatpump_midea_read_bit(heatpump_midea *aCtx, u8 *aBit) 
+BOOL iohub_heatpump_midea_read_bit(heatpump_midea *ctx, u8 *aBit) 
 {
 	BOOL 	theRet = FALSE;
     u32 	theTimeMs;
 
-	theTimeMs = iohub_heatpump_midea_read_timing(aCtx);
+	theTimeMs = iohub_heatpump_midea_read_timing(ctx);
 	if (!IS_EXPECTED_TIME(theTimeMs, NEC_CLIM_BIT_MARK, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
 		return FALSE;
 
-	theTimeMs = iohub_heatpump_midea_read_timing(aCtx);
+	theTimeMs = iohub_heatpump_midea_read_timing(ctx);
     if (IS_EXPECTED_TIME(theTimeMs, NEC_CLIM_ZERO_SPACE, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
     {
         *aBit = 0;
@@ -244,20 +244,20 @@ BOOL iohub_heatpump_midea_read_bit(heatpump_midea *aCtx, u8 *aBit)
 
 /* ----------------------------------------------------- */
 
-BOOL iohub_heatpump_midea_read(heatpump_midea *aCtx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode) 
+BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode) 
 {
 	u8          theBit = 0;
 	u8	 		theData[6] = {0x00};
 	
 		//Header
-	iohub_heatpump_midea_read_timing(aCtx); //NEC_CLIM_HDR_MARK
-	iohub_heatpump_midea_read_timing(aCtx); //NEC_CLIM_HDR_SPACE
+	iohub_heatpump_midea_read_timing(ctx); //NEC_CLIM_HDR_MARK
+	iohub_heatpump_midea_read_timing(ctx); //NEC_CLIM_HDR_SPACE
 
 	for (u8 i = 0; i < sizeof(theData); i++)
 	{
 		for (u8 k = 0; k < 8; k++)
 		{
-			if (!iohub_heatpump_midea_read_bit(aCtx, &theBit))
+			if (!iohub_heatpump_midea_read_bit(ctx, &theBit))
 				return FALSE;
 			
 			theData[i] <<= 1;
@@ -336,9 +336,9 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *aCtx, IoHubHeatpumpAction *anActi
 
 /* ----------------------------------------------------- */
 
-BOOL iohub_heatpump_midea_detectPacket(digital_async_receiver_interface_ctx *aCtx, u16 aDurationUs)
+BOOL iohub_heatpump_midea_detectPacket(digital_async_receiver_interface_ctx *ctx, u16 aDurationUs)
 {
-	heatpump_midea *theCtx = (heatpump_midea *)aCtx;
+	heatpump_midea *theCtx = (heatpump_midea *)ctx;
 	
 	theCtx->mTimings[theCtx->mTimingCount++] = aDurationUs;
 	
@@ -369,20 +369,20 @@ BOOL iohub_heatpump_midea_detectPacket(digital_async_receiver_interface_ctx *aCt
 
 /* ----------------------------------------------------- */
 
-void iohub_heatpump_midea_packetHandled(digital_async_receiver_interface_ctx *aCtx)
+void iohub_heatpump_midea_packetHandled(digital_async_receiver_interface_ctx *ctx)
 {
-	heatpump_midea *theCtx = (heatpump_midea *)aCtx;
+	heatpump_midea *theCtx = (heatpump_midea *)ctx;
 	
 	theCtx->mTimingCount = 0;
 }
 
 /* ----------------------------------------------------- */
 
-void iohub_heatpump_midea_dump_timings(heatpump_midea *aCtx)
+void iohub_heatpump_midea_dump_timings(heatpump_midea *ctx)
 {
 #ifdef DEBUG
-	for (u32 i=0; i<aCtx->mTimingCount; i++)
-		LOG_DEBUG("%d, ", aCtx->mTimings[i]);
+	for (u32 i=0; i<ctx->mTimingCount; i++)
+		LOG_DEBUG("%d, ", ctx->mTimings[i]);
 		
 	LOG_DEBUG("");
 #endif

@@ -26,19 +26,19 @@ typedef struct digital_async_receiver_s
 /* -------------------------------------------------------------- */
 
 	///\note on Arduino aPin must be 2 or 3
-void    	iohub_digital_async_receiver_init(digital_async_receiver *aCtx, u8 aPin);
-void    	iohub_digital_async_receiver_uninit(digital_async_receiver *aCtx);
+void    	iohub_digital_async_receiver_init(digital_async_receiver *ctx, u8 aPin);
+void    	iohub_digital_async_receiver_uninit(digital_async_receiver *ctx);
 
-void    	iohub_digital_async_receiver_start(digital_async_receiver *aCtx);
-void    	iohub_digital_async_receiver_stop(digital_async_receiver *aCtx);
+void    	iohub_digital_async_receiver_start(digital_async_receiver *ctx);
+void    	iohub_digital_async_receiver_stop(digital_async_receiver *ctx);
 
-u16     	iohub_digital_async_receiver_wait_for_packet(digital_async_receiver *aCtx);
-BOOL    	iohub_digital_async_receiver_has_packet_available(digital_async_receiver *aCtx, u16 *aPluginID);
-void    	iohub_digital_async_receiver_packet_handled(digital_async_receiver *aCtx, u16 aPluginID);
+u16     	iohub_digital_async_receiver_wait_for_packet(digital_async_receiver *ctx);
+BOOL    	iohub_digital_async_receiver_has_packet_available(digital_async_receiver *ctx, u16 *receiverId);
+void    	iohub_digital_async_receiver_packet_handled(digital_async_receiver *ctx, u16 receiverId);
 
-void    	iohub_digital_async_receiver_register_plugin(digital_async_receiver *aCtx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx);
+void    	iohub_digital_async_receiver_register_plugin(digital_async_receiver *ctx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx);
 
-void    	iohub_digital_async_receiver_real_time_dump(digital_async_receiver *aCtx);
+void    	iohub_digital_async_receiver_real_time_dump(digital_async_receiver *ctx);
 
 #ifdef __cplusplus
 }
