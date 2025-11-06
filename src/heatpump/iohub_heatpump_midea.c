@@ -152,7 +152,7 @@ void iohub_heatpump_midea_send_nec(heatpump_midea *ctx, const u8 aData[6])
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_send(heatpump_midea *ctx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode)
+int iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSettings *aSettings)
 {
 	u8				theValue = 0;
 	u8	 			theData[6] = {0x00};
@@ -163,14 +163,14 @@ int iohub_heatpump_midea_send(heatpump_midea *ctx, IoHubHeatpumpAction anAction,
 	theData[1] = (theValue ^ 0xFF);
 	
 	//Set Fan Speed
-	if (anAction == HeatpumpAction_OFF)
+	if (aSettings->mAction == HeatpumpAction_OFF)
 		theValue = 0x7B;
-	else if (anAction == HeatpumpAction_Direction)
+	else if (aSettings->mAction == HeatpumpAction_Direction)
 		theValue = HeatpumpFanSpeed_None;
-	else if (anAction == HeatpumpAction_ON)
+	else if (aSettings->mAction == HeatpumpAction_ON)
 	{
-		theValue = kHeatpumpFanSpeedMidea[aFanSpeed];
-		if (aMode == HeatpumpMode_Dry || aMode == HeatpumpMode_Auto)
+		theValue = kHeatpumpFanSpeedMidea[aSettings->mFanSpeed];
+		if (aSettings->mMode == HeatpumpMode_Dry || aSettings->mMode == HeatpumpMode_Auto)
 			theValue = kHeatpumpFanSpeedMideaDryAuto; //Ignore Fan speed: AUTO
 	}
 	else
@@ -182,16 +182,16 @@ int iohub_heatpump_midea_send(heatpump_midea *ctx, IoHubHeatpumpAction anAction,
 	theData[3] = (theValue ^ 0xFF);
 
 	//Set Temperature and Mode
-	if (anAction == HeatpumpAction_OFF || anAction == HeatpumpAction_Direction)
+	if (aSettings->mAction == HeatpumpAction_OFF || aSettings->mAction == HeatpumpAction_Direction)
 		theValue = TEMPERATURE_NONE;
-	else if (aMode == HeatpumpMode_Fan)
+	else if (aSettings->mMode == HeatpumpMode_Fan)
 		theValue = TEMPERATURE_NONE | HeatpumpMode_Dry;
 	else
 	{
-		if (aTemperature < 17 || aTemperature > 30)
+		if (aSettings->mTemperature < 17 || aSettings->mTemperature > 30)
 			return E_INVALID_PARAMETERS;
 
-		theValue = kTemperatureMidea[aTemperature - 17] | kHeatpumpModeMidea[aMode];
+		theValue = kTemperatureMidea[aSettings->mTemperature - 17] | kHeatpumpModeMidea[aSettings->mMode];
 	}
 
 	theData[4] = theValue;
@@ -244,7 +244,7 @@ BOOL iohub_heatpump_midea_read_bit(heatpump_midea *ctx, u8 *aBit)
 
 /* ----------------------------------------------------- */
 
-BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode) 
+BOOL iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *aSettings) 
 {
 	u8          theBit = 0;
 	u8	 		theData[6] = {0x00};
@@ -277,24 +277,24 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anActio
 	
 	if (theData[2] == 0x7B)
 	{
-		*anAction = HeatpumpAction_OFF;
-		*aFanSpeed = HeatpumpFanSpeed_None;
+		aSettings->mAction = HeatpumpAction_OFF;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_None;
 	}
 	else if (theData[2] == HeatpumpFanSpeed_None)
 	{
-		*anAction = HeatpumpAction_Direction;
-		*aFanSpeed = HeatpumpFanSpeed_None;
+		aSettings->mAction = HeatpumpAction_Direction;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_None;
 	}
 	else
 	{
-		*anAction = HeatpumpAction_ON;
-		*aFanSpeed = HeatpumpFanSpeed_Auto; //In case of kHeatpumpFanSpeedMideaDryAuto, aFanSpeed will be set to Auto	
-				
+		aSettings->mAction = HeatpumpAction_ON;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_Auto; //In case of kHeatpumpFanSpeedMideaDryAuto, aFanSpeed will be set to Auto
+
 		for (int i=0; i<HeatpumpFanSpeed_Count; i++)
 		{
 			if (theData[2] == kHeatpumpFanSpeedMidea[i])
 			{
-				*aFanSpeed = (IoHubHeatpumpFanSpeed)i;
+				aSettings->mFanSpeed = (IoHubHeatpumpFanSpeed)i;
 				break;
 			}
 		}
@@ -303,12 +303,12 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anActio
 
 	if (theData[4] == TEMPERATURE_NONE) //OFF or direction
 	{
-		*aTemperature = 0;
-		*aMode = HeatpumpMode_None;
+		aSettings->mTemperature = 0;
+		aSettings->mMode = HeatpumpMode_None;
 	}
 	else if (theData[4] == (TEMPERATURE_NONE | HeatpumpMode_Dry))
 	{
-		*aMode = HeatpumpMode_Fan;
+		aSettings->mMode = HeatpumpMode_Fan;
 	}
 	else
 	{
@@ -316,7 +316,7 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anActio
 		{
 			if ((theData[4] & 0x0F) == kHeatpumpModeMidea[i])
 			{
-				*aMode = (IoHubHeatpumpMode)i;
+				aSettings->mMode = (IoHubHeatpumpMode)i;
 				break;
 			}	
 		}
@@ -325,7 +325,7 @@ BOOL iohub_heatpump_midea_read(heatpump_midea *ctx, IoHubHeatpumpAction *anActio
 		{
 			if ((theData[4] & 0xF0) == kTemperatureMidea[i])
 			{
-				*aTemperature = i + 17;
+				aSettings->mTemperature = i + 17;
 				break;
 			}
 		}

@@ -30,3 +30,25 @@ typedef enum
 	HeatpumpAction_ON,
 	HeatpumpAction_Direction,
 }IoHubHeatpumpAction;
+
+typedef enum
+{
+	HeatpumpVaneMode_Auto = 0,
+	HeatpumpVaneMode_1,
+	HeatpumpVaneMode_2,
+	HeatpumpVaneMode_3,
+	HeatpumpVaneMode_4,
+	HeatpumpVaneMode_5,
+	HeatpumpVaneMode_Swing,
+
+	HeatpumpVaneMode_Count
+}IoHubHeatpumpVaneMode;
+
+typedef struct IoHubHeatpumpSettings_s
+{
+	IoHubHeatpumpAction		mAction;
+	int						mTemperature;
+	IoHubHeatpumpFanSpeed	mFanSpeed;
+	IoHubHeatpumpMode		mMode;
+	IoHubHeatpumpVaneMode	mVaneMode;
+}IoHubHeatpumpSettings;

@@ -60,6 +60,17 @@ static const u8 kFanSpeedMitsubishi[HeatpumpFanSpeed_Count] =
 	0x01  //Low = 01 or 02
 };
 
+static const u8 kVaneModeMitsubishi[HeatpumpVaneMode_Count] = 
+{
+	0x00, //Auto
+	0x01, //1
+	0x02, //2
+	0x03, //3
+	0x04, //4
+	0x05, //5
+	0x07  //Swing
+};
+
 typedef struct heatpump_pkt_s
 {
 	u8 mCmd;
@@ -218,7 +229,7 @@ void iohub_heatpump_mitsubishi_uninit(heatpump_mitsubishi_ctx *ctx)
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *ctx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode)
+ret_code_t iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *ctx, const IoHubHeatpumpSettings *aSettings)
 {
 	ret_code_t 		theRet;
 	heatpump_pkt 	thePkt;
@@ -239,19 +250,19 @@ ret_code_t iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *ctx, IoH
 	thePkt.mData[1] |= 0x0F; // Inform we want to change power 0x01, mode 0x02, temp 0x04, fan 0x08, (VANE:0x10 DIR:0x80 not changed) 
 	
 	//Power
-	thePkt.mData[3] = (anAction == HeatpumpAction_ON) ? 0x01 : 0x00;
+	thePkt.mData[3] = (aSettings->mAction == HeatpumpAction_ON) ? 0x01 : 0x00;
 	
 	//Mode
-	thePkt.mData[4] = kHeatpumpModeMitsubishi[aMode];
+	thePkt.mData[4] = kHeatpumpModeMitsubishi[aSettings->mMode];
 
 	//Temp
-	thePkt.mData[5] = 0xF - (aTemperature - 16);
+	thePkt.mData[5] = 0xF - (aSettings->mTemperature - 16);
 
 	//Fan
-	thePkt.mData[6] = kFanSpeedMitsubishi[aFanSpeed];
+	thePkt.mData[6] = kFanSpeedMitsubishi[aSettings->mFanSpeed];
 
 	//Vane
-	thePkt.mData[7] = 0x00; //0x00=Auto, 0x01=1, 0x02=2 ..., 0x07=SWING
+	thePkt.mData[7] = kVaneModeMitsubishi[aSettings->mVaneMode]; //0x00=Auto, 0x01=1, 0x02=2 ..., 0x07=SWING
 	
 	//Dir
 	thePkt.mData[10] = 0x00;
@@ -273,7 +284,7 @@ ret_code_t iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *ctx, IoH
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *ctx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode)
+ret_code_t iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *ctx, IoHubHeatpumpSettings *aSettings)
 {
 	ret_code_t 		theRet;
 	heatpump_pkt 	thePkt;
@@ -304,31 +315,41 @@ ret_code_t iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *ctx, IoH
 		return E_INVALID_DATA;
 
 		//Action
-	*anAction = (thePkt.mData[3] == 0x01) ? HeatpumpAction_ON : HeatpumpAction_OFF;
-	
+	aSettings->mAction = (thePkt.mData[3] == 0x01) ? HeatpumpAction_ON : HeatpumpAction_OFF;
+
 		//Mode
 	for (int theMode = HeatpumpMode_None; theMode < HeatpumpMode_Count; theMode++)
 	{
 		if (thePkt.mData[4] == kHeatpumpModeMitsubishi[theMode])
 		{
-			*aMode = (IoHubHeatpumpMode)theMode;
+			aSettings->mMode = (IoHubHeatpumpMode)theMode;
 			break;
 		}
 	}
 	
 		//Temp 0x0F = 16 ... 0x06 = 25
-	*aTemperature = (0xF - thePkt.mData[5]) + 16;
+	aSettings->mTemperature = (0xF - thePkt.mData[5]) + 16;
 
 		//Fan (see kFanSpeedMitsubishi for more information)
 	if (thePkt.mData[6] == 0x01 || thePkt.mData[6] == 0x02)
-		*aFanSpeed = HeatpumpFanSpeed_Low;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_Low;
 	else if (thePkt.mData[6] == 0x03 || thePkt.mData[6] == 0x04)
-		*aFanSpeed = HeatpumpFanSpeed_Med;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_Med;
 	else if (thePkt.mData[6] == 0x05 || thePkt.mData[6] == 0x06)
-		*aFanSpeed = HeatpumpFanSpeed_High;
+		aSettings->mFanSpeed = HeatpumpFanSpeed_High;
 	else //Include 0x00 and all others
-		*aFanSpeed = HeatpumpFanSpeed_Auto;
-	
+		aSettings->mFanSpeed = HeatpumpFanSpeed_Auto;
+
+		//Vane
+	for (int vaneMode = HeatpumpVaneMode_Auto; vaneMode < HeatpumpVaneMode_Count; vaneMode++)
+	{
+		if (thePkt.mData[7] == kVaneModeMitsubishi[vaneMode])
+		{
+			aSettings->mVaneMode = (IoHubHeatpumpVaneMode)vaneMode;
+			break;
+		}
+	}
+
 	return SUCCESS;
 }
 

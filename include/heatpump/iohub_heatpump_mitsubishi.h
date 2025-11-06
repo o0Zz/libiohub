@@ -27,8 +27,8 @@ typedef struct heatpump_mitsubishi_ctx_s
 ret_code_t  		iohub_heatpump_mitsubishi_init(heatpump_mitsubishi_ctx *aCtx, uart_ctx *anUART);
 void    			iohub_heatpump_mitsubishi_uninit(heatpump_mitsubishi_ctx *aCtx);
 
-ret_code_t			iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *aCtx, IoHubHeatpumpAction anAction, int aTemperature, IoHubHeatpumpFanSpeed aFanSpeed, IoHubHeatpumpMode aMode);
-ret_code_t 			iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *aCtx, IoHubHeatpumpAction *anAction, int *aTemperature, IoHubHeatpumpFanSpeed *aFanSpeed, IoHubHeatpumpMode *aMode);
+ret_code_t			iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *aCtx, const IoHubHeatpumpSettings *aSettings);
+ret_code_t 			iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *aCtx, IoHubHeatpumpSettings *aSettings);
 
 ret_code_t 			iohub_heatpump_mitsubishi_get_room_temperature(heatpump_mitsubishi_ctx *aCtx, float *aTemperature);
 
