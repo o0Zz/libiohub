@@ -3,13 +3,6 @@
 #include "platform/iohub_uart.h"
 #include "heatpump/iohub_heatpump_common.h"
 
-/*
-
-IMPORTANT:
-	UART is baud 2400 with parity EVEN !
-	DO not forget parity or it will not works !
-*/
-
 #ifdef __cplusplus
 extern "C" {
 #endif

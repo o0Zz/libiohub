@@ -95,15 +95,14 @@ u16 iohub_uart_data_available(uart_ctx *ctx)
 
 /* ------------------------------------------------------------- */
 
-u8 iohub_uart_read_byte(uart_ctx *ctx)
+ret_code_t iohub_uart_read_byte(uart_ctx *ctx, u8 *byte)
 {
-    u8 data = 0;
-    int len = uart_read_bytes(ESP_UART_NUM, &data, 1, 0); // Non-blocking read
+    int len = uart_read_bytes(ESP_UART_NUM, byte, 1, 0); 
     if (len <= 0) {
-        return 0;
+        return E_READ_ERROR;
     }
 
-    return data;
+    return SUCCESS;
 }
 
 /* ------------------------------------------------------------- */
@@ -142,7 +141,7 @@ ret_code_t iohub_uart_read(uart_ctx *ctx, u8 *buffer, u16 *size)
 
 /* ------------------------------------------------------------- */
 
-ret_code_t iohub_uart_write(uart_ctx *ctx, u8 *buffer, u16 size)
+ret_code_t iohub_uart_write(uart_ctx *ctx, const u8 *buffer, u16 size)
 {
     if (!buffer || size == 0) {
         return E_INVALID_PARAMETERS;

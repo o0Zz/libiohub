@@ -728,7 +728,7 @@ ret_code_t iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 
 /* ------------------------------------------------------------- */
 
-ret_code_t iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
+ret_code_t iohub_uart_write(uart_ctx *aCtx, const u8 *aBuffer, u16 aSize)
 {
 	if ( sSerial.write(aBuffer, aSize) == aSize )
 		return SUCCESS;

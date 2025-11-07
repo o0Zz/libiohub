@@ -123,7 +123,10 @@ typedef struct heatpump_pkt_s
 		{
 			theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);
 			if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+			{
+				ctx->mfConnected = FALSE; // Mark as disconnected to retry connection
 				return E_TIMEOUT;
+			}
 		}
 		
 		theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);

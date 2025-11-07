@@ -80,9 +80,13 @@ u16 iohub_uart_data_available(uart_ctx *aCtx)
 
 /* ------------------------------------------------------------- */
 
-u8 iohub_uart_read_byte(uart_ctx *aCtx)
+ret_code_t iohub_uart_read_byte(uart_ctx *aCtx, u8 *byte)
 {
-	return sSerial->read();
+	if (sSerial->available() == 0)
+		return E_READ_ERROR;
+		
+	*byte = sSerial->read();
+	return SUCCESS;
 }
 
 /* ------------------------------------------------------------- */
@@ -100,7 +104,7 @@ ret_code_t iohub_uart_read(uart_ctx *aCtx, u8 *aBuffer, u16 *aSize)
 
 /* ------------------------------------------------------------- */
 
-ret_code_t iohub_uart_write(uart_ctx *aCtx, u8 *aBuffer, u16 aSize)
+ret_code_t iohub_uart_write(uart_ctx *aCtx, const u8 *aBuffer, u16 aSize)
 {
 	for (u16 i=0; i<aSize; i++)
 		sSerial->write(aBuffer[i]);

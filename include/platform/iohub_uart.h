@@ -30,11 +30,11 @@ ret_code_t			iohub_uart_open(uart_ctx *ctx, u32 baudrate, IOHubUartParity parity
 
 u16	    			iohub_uart_data_available(uart_ctx *ctx);
 
-u8    				iohub_uart_read_byte(uart_ctx *ctx);
+ret_code_t    		iohub_uart_read_byte(uart_ctx *ctx, u8 *byte);
 
 ret_code_t    		iohub_uart_read(uart_ctx *ctx, u8 *buffer, u16 *size);
 
-ret_code_t    		iohub_uart_write(uart_ctx *ctx, u8 *buffer, u16 size);
+ret_code_t    		iohub_uart_write(uart_ctx *ctx, const u8 *buffer, u16 size);
 
 void    			iohub_uart_close(uart_ctx *ctx);
 

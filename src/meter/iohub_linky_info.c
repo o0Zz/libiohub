@@ -71,43 +71,42 @@ void iohub_linky_info_uninit(linky_info *ctx)
 			Line format:  "KEY VALUE CRC\r\n"
 		*/
 
-		if (iohub_uart_data_available(ctx->mUart) > 0)
+		u8 byte;
+		if (iohub_uart_read_byte(ctx->mUart, &byte) != SUCCESS)
+			return NULL;
+
+		if (byte == 0x02 /*STX*/ || byte == 0x03 /*ETX*/)
+			return NULL; //Nothing to do, skip STX and ETX and continue
+
+		ctx->mLine[ctx->mLineIdx++] = byte;
+
+		if (byte == '\n' || (ctx->mLineIdx >= sizeof(ctx->mLine) - 1))
 		{
-			char theChar = iohub_uart_read_byte(ctx->mUart) & 0x7F;
-
-			if (theChar == 0x02 /*STX*/ || theChar == 0x03 /*ETX*/)
-				return NULL; //Nothing to do, skip STX and ETX and continue
-
-			ctx->mLine[ctx->mLineIdx++] = theChar;
-
-			if (theChar == '\n' || (ctx->mLineIdx >= sizeof(ctx->mLine) - 1))
+			if (ctx->mLineIdx > 7)
 			{
-				if (ctx->mLineIdx > 7)
-				{
-					//log_buffer(ctx->mLine, ctx->mLineIdx);
+				//log_buffer(ctx->mLine, ctx->mLineIdx);
 
-					ctx->mLineIdx -= 3; // -3 = CRC + \r + \n
+				ctx->mLineIdx -= 3; // -3 = CRC + \r + \n
 
-					u8 crc_computed = 0x20;
-					for (u8 i=0; i<ctx->mLineIdx; i++)
-						crc_computed += ctx->mLine[i];
-					crc_computed = (crc_computed & 0x3F) + 0x20;
+				u8 crc_computed = 0x20;
+				for (u8 i=0; i<ctx->mLineIdx; i++)
+					crc_computed += ctx->mLine[i];
+				crc_computed = (crc_computed & 0x3F) + 0x20;
 
-					u8 crc_read = ctx->mLine[ctx->mLineIdx];
+				u8 crc_read = ctx->mLine[ctx->mLineIdx];
 
-					ctx->mLine[ctx->mLineIdx - 1] = '\0'; //Cut the string just before the CRC (Replace Space by \0)
-					ctx->mLineIdx = 0;
+				ctx->mLine[ctx->mLineIdx - 1] = '\0'; //Cut the string just before the CRC (Replace Space by \0)
+				ctx->mLineIdx = 0;
 
-					if (crc_computed == crc_read)
-						return ctx->mLine;
+				if (crc_computed == crc_read)
+					return ctx->mLine;
 
-					IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)", ctx->mLine, crc_read, crc_computed);
-				}
-				else
-				{
-					ctx->mLineIdx = 0;
-					IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)");
-				}
+				IOHUB_LOG_ERROR("TeleInfo: Invalid CRC: %s (Got: 0x%x, Computed: 0x%x)", ctx->mLine, crc_read, crc_computed);
+			}
+			else
+			{
+				ctx->mLineIdx = 0;
+				IOHUB_LOG_ERROR("TeleInfo: Invalid string (Too small)");
 			}
 		}
 
