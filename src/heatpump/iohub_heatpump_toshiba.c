@@ -105,7 +105,6 @@ static const u8 HANDSHAKE_SYN_PACKET_6[8]  = {2, 0, 2, 0, 0, 0, 0, 254};
 
 static const u8 HANDSHAKE_ACK_PACKET_1[10] = {2, 0, 2, 1, 0, 0, 2, 0, 0, 251};
 static const u8 HANDSHAKE_ACK_PACKET_2[10] = {2, 0, 2, 2, 0, 0, 2, 0, 0, 250};
-
 typedef struct heatpump_pkt_s
 {
 	u8 mHeader[3];
@@ -223,33 +222,16 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 		
-	static ret_code_t iohub_heatpump_toshiba_read_byte(heatpump_toshiba_ctx *ctx, u8 *byte, u16 aTimeoutMs)
-	{
-		u32 startTime = iohub_time_now_ms();
-		
-		while ((iohub_time_now_ms() - startTime) < aTimeoutMs) 
-		{
-			if (iohub_uart_read_byte(ctx->mUartCtx, byte) == SUCCESS)
-				return SUCCESS;
-			
-			iohub_time_delay_ms(1);
-		}
-		
-		return E_TIMEOUT;
-	}
-
-	/* -------------------------------------------------------------- */
-		
 	static ret_code_t iohub_heatpump_toshiba_read_pkt(heatpump_toshiba_ctx *ctx, heatpump_pkt *aPkt)
 	{
-		u8 buffer[TOSHIBA_MAX_PACKET_SIZE + 8]; // Extra space for header and metadata
+		u8 buffer[sizeof(heatpump_pkt)]; // Extra space for header and metadata
 		int bytesRead = 0;
 		u32 startTime = iohub_time_now_ms();
 		
 		// Read with timeout
 		while (bytesRead < sizeof(buffer) && (iohub_time_now_ms() - startTime) < TOSHIBA_PACKET_READ_TIMEOUT_MS) 
 		{
-			ret_code_t ret = iohub_heatpump_toshiba_read_byte(ctx, &buffer[bytesRead], 10);
+			ret_code_t ret = iohub_uart_read_byte(ctx->mUartCtx, &buffer[bytesRead]);
 			if (ret == SUCCESS) 
 			{
 				bytesRead++;
@@ -259,7 +241,8 @@ typedef struct heatpump_pkt_s
 			}
 		}
 
-		if (bytesRead == 0) {
+		if (bytesRead == 0) 
+		{
 			LOG_DEBUG("No data received within timeout");
 			ctx->mfConnected = false; // Mark as disconnected
 			return E_TIMEOUT;
