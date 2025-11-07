@@ -261,7 +261,7 @@ typedef struct heatpump_pkt_s
 
 		if (bytesRead == 0) {
 			LOG_DEBUG("No data received within timeout");
-			ctx->mConnected = FALSE; // Mark as disconnected - Sound like toshiba disconnect
+			ctx->mfConnected = false; // Mark as disconnected
 			return E_TIMEOUT;
 		}
 		
@@ -293,8 +293,7 @@ typedef struct heatpump_pkt_s
 			
 			LOG_DEBUG("Received packet: type=0x%02X, size=%d, dataLen=%d", aPkt->mType, aPkt->mSize, dataLength);
 			LOG_BUFFER(buffer, bytesRead);
-			
-			ctx->mLastReceiveTime = iohub_time_now_ms();
+
 			return SUCCESS;
 		}
 		
@@ -391,29 +390,28 @@ typedef struct heatpump_pkt_s
 		// Send handshake SYN packets in sequence
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_1, sizeof(HANDSHAKE_SYN_PACKET_1));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_2, sizeof(HANDSHAKE_SYN_PACKET_2));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_3, sizeof(HANDSHAKE_SYN_PACKET_3));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_4, sizeof(HANDSHAKE_SYN_PACKET_4));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_5, sizeof(HANDSHAKE_SYN_PACKET_5));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_6, sizeof(HANDSHAKE_SYN_PACKET_6));
 		if (ret != SUCCESS) return ret;
-		
-		ctx->mConnectionState = toshiba_state_handshake_syn;
-		
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
+
 		LOG_DEBUG("Handshake SYN packets sent");
 		return SUCCESS;
 	}
@@ -426,49 +424,16 @@ typedef struct heatpump_pkt_s
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_ACK_PACKET_1, sizeof(HANDSHAKE_ACK_PACKET_1));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(200);
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 		
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_ACK_PACKET_2, sizeof(HANDSHAKE_ACK_PACKET_2));
-		if (ret != SUCCESS) 
-			return ret;
+		if (ret != SUCCESS) return ret;
+		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
 
-		ctx->mConnectionState = toshiba_state_handshake_ack;
-		
 		LOG_DEBUG("Handshake ACK packets sent");
 		return SUCCESS;
 	}
 
-	/* -------------------------------------------------------------- */
-
-	static ret_code_t iohub_heatpump_toshiba_process_packet(heatpump_toshiba_ctx *ctx, heatpump_pkt *aPkt)
-	{
-		switch (aPkt->mType) {
-			case TOSHIBA_PACKET_TYPE_SYN_ACK:
-				LOG_DEBUG("Received SYN/ACK");
-				ctx->mHandshakeReceived = TRUE;
-				return iohub_heatpump_toshiba_send_handshake_ack(ctx);
-				
-			case TOSHIBA_PACKET_TYPE_ACK:
-				LOG_DEBUG("Received ACK - connection established");
-				ctx->mConnected = TRUE;
-				ctx->mConnectionState = toshiba_state_connected;
-				return SUCCESS;
-				
-			case TOSHIBA_PACKET_TYPE_FEEDBACK:
-			case TOSHIBA_PACKET_TYPE_REPLY:
-				// Check for READY status
-				if (aPkt->mSize >= 2 && aPkt->mData[0] == TOSHIBA_FUNCTION_STATUS && aPkt->mData[1] == TOSHIBA_STATUS_READY) {
-					LOG_DEBUG("Device is READY");
-					ctx->mConnected = TRUE;
-					ctx->mConnectionState = toshiba_state_connected;
-				}
-				return SUCCESS;
-				
-			default:
-				LOG_DEBUG("Unknown packet type: 0x%02X", aPkt->mType);
-				return E_INVALID_DATA;
-		}
-	}
 
 	/* -------------------------------------------------------------- */
 
@@ -476,12 +441,9 @@ typedef struct heatpump_pkt_s
 	{
 		heatpump_pkt packet;
 		
-		if (!ctx->mInitialized || ctx->mConnectionState == toshiba_state_disconnected) 
-		{
-			ret_code_t ret = iohub_heatpump_toshiba_send_handshake_syn(ctx);
-			if (ret != SUCCESS) 
-				return ret;
-		}
+		ret_code_t ret = iohub_heatpump_toshiba_send_handshake_syn(ctx);
+		if (ret != SUCCESS) 
+			return ret;
 		
 		// Wait for handshake response
 		u32 startTime = iohub_time_now_ms();
@@ -490,17 +452,35 @@ typedef struct heatpump_pkt_s
 			ret_code_t ret = iohub_heatpump_toshiba_read_pkt(ctx, &packet);
 			if (ret == SUCCESS) 
 			{
-				ret = iohub_heatpump_toshiba_process_packet(ctx, &packet);
-				if (ret != SUCCESS) 
-					return ret;
-				
-				if (ctx->mConnected) {
-					LOG_DEBUG("Connection established successfully");
-					return SUCCESS;
+				switch (packet.mType) 
+				{
+					case TOSHIBA_PACKET_TYPE_SYN_ACK:
+						LOG_DEBUG("Received SYN/ACK");
+						(void)iohub_heatpump_toshiba_send_handshake_ack(ctx);
+						break;
+						
+					case TOSHIBA_PACKET_TYPE_ACK:
+						LOG_DEBUG("Received ACK - Connection established !");
+						ctx->mfConnected = true;
+						return SUCCESS;
+						
+					case TOSHIBA_PACKET_TYPE_FEEDBACK:
+					case TOSHIBA_PACKET_TYPE_REPLY:
+						if (packet.mSize >= 2 && packet.mData[0] == TOSHIBA_FUNCTION_STATUS && packet.mData[1] == TOSHIBA_STATUS_READY) 
+						{
+							LOG_DEBUG("Device READY - Connection established !");
+							ctx->mfConnected = true;
+						}
+						return SUCCESS;
+						
+					default:
+						LOG_DEBUG("Unknown packet type: 0x%02X", packet.mType);
+						break;
 				}
 			}
 		}
-		
+
+		ctx->mfConnected = false;
 		return E_TIMEOUT;
 	}
 
@@ -515,10 +495,7 @@ ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUA
 	memset(ctx, 0x00, sizeof(heatpump_toshiba_ctx));
 	
 	ctx->mUartCtx = anUART;
-	ctx->mConnectionState = toshiba_state_disconnected;
-	ctx->mConnected = FALSE;
-	ctx->mHandshakeReceived = FALSE;
-	ctx->mInitialized = FALSE;
+	ctx->mfConnected = false;
 
 	ret_code_t ret = iohub_uart_open(ctx->mUartCtx, 9600, IOHubUartParity_Even, 1);
 	if (ret != SUCCESS) {
@@ -526,8 +503,6 @@ ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUA
 		return ret;
 	}
 
-	ctx->mInitialized = TRUE;
-	
 	// Attempt initial connection
 	ret = iohub_heatpump_toshiba_connect(ctx);
 	if (ret != SUCCESS) {
@@ -545,9 +520,7 @@ void iohub_heatpump_toshiba_uninit(heatpump_toshiba_ctx *ctx)
 	if (ctx && ctx->mUartCtx) 
 	{
 		iohub_uart_close(ctx->mUartCtx);
-		ctx->mInitialized = FALSE;
-		ctx->mConnected = FALSE;
-		ctx->mConnectionState = toshiba_state_disconnected;
+		ctx->mfConnected = false;
 	}
 }
 
@@ -559,12 +532,11 @@ ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoH
 		return E_INVALID_PARAMETERS;
 	}
 	
-	if (!ctx->mConnected) {
-		// Try to reconnect
+	if (!ctx->mfConnected) 
+	{
 		ret_code_t ret = iohub_heatpump_toshiba_connect(ctx);
-		if (ret != SUCCESS) {
+		if (ret != SUCCESS)
 			return E_INVALID_NOT_CONNECTED;
-		}
 	}
 	
 	heatpump_pkt packet;
@@ -632,12 +604,11 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 		return E_INVALID_PARAMETERS;
 	}
 	
-	if (!ctx->mConnected) {
-		// Try to reconnect
+	if (!ctx->mfConnected) 
+	{
 		ret_code_t ret = iohub_heatpump_toshiba_connect(ctx);
-		if (ret != SUCCESS) {
+		if (ret != SUCCESS)
 			return E_INVALID_NOT_CONNECTED;
-		}
 	}
 
 	queryPacket.mType = TOSHIBA_PACKET_TYPE_COMMAND;
@@ -719,12 +690,11 @@ ret_code_t iohub_heatpump_toshiba_get_room_temperature(heatpump_toshiba_ctx *ctx
 		return E_INVALID_PARAMETERS;
 	}
 	
-	if (!ctx->mConnected) {
-		// Try to reconnect
+	if (!ctx->mfConnected) 
+	{
 		ret_code_t ret = iohub_heatpump_toshiba_connect(ctx);
-		if (ret != SUCCESS) {
+		if (ret != SUCCESS)
 			return E_INVALID_NOT_CONNECTED;
-		}
 	}
 	
 	heatpump_pkt queryPacket;

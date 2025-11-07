@@ -7,22 +7,10 @@
 extern "C" {
 #endif
 
-typedef enum
-{
-	toshiba_state_disconnected = 0,
-	toshiba_state_handshake_syn,
-	toshiba_state_handshake_ack,
-	toshiba_state_connected
-} toshiba_connection_state;
-
 typedef struct heatpump_toshiba_ctx_s
 {
     uart_ctx						*mUartCtx;
-	toshiba_connection_state		mConnectionState;
-	u32								mLastReceiveTime;
-	BOOL							mConnected;
-	BOOL							mHandshakeReceived;
-	BOOL							mInitialized;
+	bool							mfConnected;
 } heatpump_toshiba_ctx;
 
 /* -------------------------------------------------------------- */
