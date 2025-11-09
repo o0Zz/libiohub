@@ -7,11 +7,13 @@
 
 //https://github.com/burrocargado/toshiba-aircon-mqtt-bridge/tree/master
 //https://github.com/ormsport/ToshibaCarrierHvac/blob/main/src/ToshibaCarrierHvac.cpp
+// https://github.com/IntExCZ/Toshiba-HVAC/blob/main/HomeAssistant/AppDaemon/apps/toshiba-hvac.py
 
+//Daikin: https://github.com/Arnold-n/P1P2MQTT
 #define DEBUG
 
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
+#	define LOG_DEBUG(...)				IOHUB_LOG_INFO(__VA_ARGS__)
 #	define LOG_BUFFER(buf, size)		IOHUB_LOG_BUFFER(buf, size)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
@@ -24,109 +26,126 @@
 #define TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS		200
 
 // Toshiba protocol constants
-#define TOSHIBA_MAX_PACKET_SIZE				17
+#define TOSHIBA_MAX_PACKET_SIZE				0xFF
 #define TOSHIBA_HANDSHAKE_TIMEOUT_MS		5000
+
 #define TOSHIBA_COMMAND_TIMEOUT_MS			1000
 #define TOSHIBA_PACKET_READ_TIMEOUT_MS		250
 
+#define TOSHIBA_PACKET_STX					0x02
+
 // Packet types
-#define TOSHIBA_PACKET_TYPE_COMMAND			16
-#define TOSHIBA_PACKET_TYPE_FEEDBACK		17
-#define TOSHIBA_PACKET_TYPE_SYN_ACK			128
-#define TOSHIBA_PACKET_TYPE_ACK				130
-#define TOSHIBA_PACKET_TYPE_REPLY			144
+#define TOSHIBA_PACKET_TYPE_REPLY_MASK		0x80
+
+#define TOSHIBA_PACKET_TYPE_SYN				0x00
+
+#define TOSHIBA_PACKET_TYPE_UNKNOWN1		0x01
+
+
+#define TOSHIBA_PACKET_TYPE_COMMAND			0x10
+#define TOSHIBA_PACKET_TYPE_FEEDBACK		0x11
+#define TOSHIBA_PACKET_TYPE_SYN_ACK			0x80
+#define TOSHIBA_PACKET_TYPE_UNKNOWN81		0x81
+#define TOSHIBA_PACKET_TYPE_ACK				0x82
+#define TOSHIBA_PACKET_TYPE_REPLY			0x90
 
 // Function codes
-#define TOSHIBA_FUNCTION_STATE				128
-#define TOSHIBA_FUNCTION_PSEL				135
-#define TOSHIBA_FUNCTION_STATUS				136
-#define TOSHIBA_FUNCTION_ONTIMER			144
-#define TOSHIBA_FUNCTION_OFFTIMER			148
-#define TOSHIBA_FUNCTION_FANMODE			160
-#define TOSHIBA_FUNCTION_SWING				163
-#define TOSHIBA_FUNCTION_MODE				176
-#define TOSHIBA_FUNCTION_SETPOINT			179
-#define TOSHIBA_FUNCTION_ROOMTEMP			187
-#define TOSHIBA_FUNCTION_OUTSIDETEMP		190
-#define TOSHIBA_FUNCTION_PURE				199
-#define TOSHIBA_FUNCTION_WIFILED1			222
-#define TOSHIBA_FUNCTION_WIFILED2			223
-#define TOSHIBA_FUNCTION_OP					247
-#define TOSHIBA_FUNCTION_GROUP1				248
+#define TOSHIBA_FUNCTION_POWER_STATE		0x80
+#define TOSHIBA_FUNCTION_PSEL				0x87
+#define TOSHIBA_FUNCTION_STATUS				0x88
+#define TOSHIBA_FUNCTION_TIMER_ON			0x90
+#define TOSHIBA_FUNCTION_TIMER_OFF			0x94
+#define TOSHIBA_FUNCTION_FANMODE			0xA0
+#define TOSHIBA_FUNCTION_SWING				0xA3
+#define TOSHIBA_FUNCTION_UNIT_MODE			0xB0
+#define TOSHIBA_FUNCTION_SETPOINT			0xB3
+#define TOSHIBA_FUNCTION_ROOMTEMP			0xBB
+#define TOSHIBA_FUNCTION_OUTSIDETEMP		0xBE
+#define TOSHIBA_FUNCTION_PURE				0xC7
+#define TOSHIBA_FUNCTION_WIFILED1			0xDE
+#define TOSHIBA_FUNCTION_WIFILED2			0xDF
+#define TOSHIBA_FUNCTION_OP					0xF7
+#define TOSHIBA_FUNCTION_GROUP1				0xF8
 
 // Status values
-#define TOSHIBA_STATUS_READY				66
+#define TOSHIBA_STATUS_READY				0x42
 
 // State values  
-#define TOSHIBA_STATE_ON					49
-#define TOSHIBA_STATE_OFF					48
+#define TOSHIBA_STATE_ON					0x31
+#define TOSHIBA_STATE_OFF					0x30
 
 // Mode values
-#define TOSHIBA_MODE_AUTO					65
-#define TOSHIBA_MODE_COOL					66
-#define TOSHIBA_MODE_HEAT					67
-#define TOSHIBA_MODE_DRY					68
-#define TOSHIBA_MODE_FAN_ONLY				69
+#define TOSHIBA_MODE_AUTO					0x41
+#define TOSHIBA_MODE_COOL					0x42
+#define TOSHIBA_MODE_HEAT					0x43
+#define TOSHIBA_MODE_DRY					0x44
+#define TOSHIBA_MODE_FAN_ONLY				0x45
 
 // Fan mode values
-#define TOSHIBA_FANMODE_QUIET				49
-#define TOSHIBA_FANMODE_LVL1				50
-#define TOSHIBA_FANMODE_LVL2				51
-#define TOSHIBA_FANMODE_LVL3				52
-#define TOSHIBA_FANMODE_LVL4				53
-#define TOSHIBA_FANMODE_LVL5				54
-#define TOSHIBA_FANMODE_AUTO				65
+#define TOSHIBA_FANMODE_QUIET				0x31
+#define TOSHIBA_FANMODE_LVL1				0x32
+#define TOSHIBA_FANMODE_LVL2				0x33
+#define TOSHIBA_FANMODE_LVL3				0x34
+#define TOSHIBA_FANMODE_LVL4				0x35
+#define TOSHIBA_FANMODE_LVL5				0x36
+#define TOSHIBA_FANMODE_AUTO				0x41
 
 // Swing values
-#define TOSHIBA_SWING_FIX					49
-#define TOSHIBA_SWING_VERTICAL				65
-#define TOSHIBA_SWING_HORIZONTAL			66
-#define TOSHIBA_SWING_BOTH					67
-#define TOSHIBA_SWING_POS1					80
-#define TOSHIBA_SWING_POS2					81
-#define TOSHIBA_SWING_POS3					82
-#define TOSHIBA_SWING_POS4					83
-#define TOSHIBA_SWING_POS5					84
+#define TOSHIBA_SWING_FIX					0x31
+#define TOSHIBA_SWING_VERTICAL				0x41
+#define TOSHIBA_SWING_HORIZONTAL			0x42
+#define TOSHIBA_SWING_BOTH					0x43
+#define TOSHIBA_SWING_POS1					0x50
+#define TOSHIBA_SWING_POS2					0x51
+#define TOSHIBA_SWING_POS3					0x52
+#define TOSHIBA_SWING_POS4					0x53
+#define TOSHIBA_SWING_POS5					0x54
+
+#define TOSHIBA_BYTE_TIMEOUT				-1
 
 /* -------------------------------------------------------------- */
 
 // Protocol constants
-static const u8 PACKET_HEADER[3] = {2, 0, 3};
-static const u8 HANDSHAKE_HEADER[3] = {2, 0, 0};
-static const u8 CONFIRM_HEADER[3] = {2, 0, 2};
+/*static const u8 PACKET_HEADER[3] = {0x02, 0x00, 0x03};
+static const u8 HANDSHAKE_HEADER[3] = {0x02, 0x00, 0x00};
+static const u8 CONFIRM_HEADER[3] = {0x02, 0x00, 0x02};
+*/
 
 // Handshake packets
-static const u8 HANDSHAKE_SYN_PACKET_1[8]  = {2, 255, 255, 0, 0, 0, 0, 2};
-static const u8 HANDSHAKE_SYN_PACKET_2[9]  = {2, 255, 255, 1, 0, 0, 1, 2, 254};
-static const u8 HANDSHAKE_SYN_PACKET_3[10] = {2, 0, 0, 0, 0, 0, 2, 2, 2, 250};
-static const u8 HANDSHAKE_SYN_PACKET_4[10] = {2, 0, 1, 129, 1, 0, 2, 0, 0, 123};
-static const u8 HANDSHAKE_SYN_PACKET_5[10] = {2, 0, 1, 2, 0, 0, 2, 0, 0, 254};
-static const u8 HANDSHAKE_SYN_PACKET_6[8]  = {2, 0, 2, 0, 0, 0, 0, 254};
+static const u8 HANDSHAKE_SYN_PACKET_1[8]  = {0x02, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x02};
+static const u8 HANDSHAKE_SYN_PACKET_2[9]  = {0x02, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x01, 0x02, 0xFE};
+static const u8 HANDSHAKE_SYN_PACKET_3[10] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x02, 0xFA};
+static const u8 HANDSHAKE_SYN_PACKET_4[10] = {0x02, 0x00, 0x01, 0x81, 0x01, 0x00, 0x02, 0x00, 0x00, 0x7B};
+static const u8 HANDSHAKE_SYN_PACKET_5[10] = {0x02, 0x00, 0x01, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFE};
 
-static const u8 HANDSHAKE_ACK_PACKET_1[10] = {2, 0, 2, 1, 0, 0, 2, 0, 0, 251};
-static const u8 HANDSHAKE_ACK_PACKET_2[10] = {2, 0, 2, 2, 0, 0, 2, 0, 0, 250};
+static const u8 HANDSHAKE_SYN_PACKET_6[8]  = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0xFE};
+
+static const u8 HANDSHAKE_ACK_PACKET_1[10] = {0x02, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFB};
+static const u8 HANDSHAKE_ACK_PACKET_2[10] = {0x02, 0x00, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFA};
 typedef struct heatpump_pkt_s
 {
-	u8 mHeader[3];
+	u8 mSTX;
+	u8 mHeader[2];
 	u8 mType;
 	u8 mUnknown1;
 	u8 mUnknown2;
-	u8 mSize;
+	u8 mSize; //Size of data field
 	u8 mData[TOSHIBA_MAX_PACKET_SIZE];
 	u8 mChecksum;
-}heatpump_pkt;
+} __attribute__((packed)) heatpump_pkt;
 
 
 	/* -------------------------------------------------------------- */
 	
-	static u8 iohub_heatpump_toshiba_crc(u16 baseKey, const u8 *data, u8 dataLen)
+	static u8 iohub_heatpump_toshiba_crc(const u8 *data, u8 dataLen)
 	{
-		s16 result = baseKey - (dataLen * 2);
+		u32 crc = 0x00;
 		
-		for (s8 i = 0; i < dataLen; i++) 
-			result -= data[i];
-		
-		return (u8)result; 
+			//Skip first byte (STX)
+		for (u8 i = 1; i < dataLen; i++) 
+			crc += data[i];
+
+    	return (u8)(-((u8)crc));
 	}
 
 	/* -------------------------------------------------------------- */
@@ -219,69 +238,80 @@ typedef struct heatpump_pkt_s
 			default: return HeatpumpVaneMode_Auto;
 		}
 	}
+	/* -------------------------------------------------------------- */
+		
+	static ret_code_t iohub_heatpump_toshiba_read_byte(heatpump_toshiba_ctx *ctx, u8 *byte, u16 timeoutMs)
+	{
+		u16 size = 0;
+		
+		u32 theStartTime = IOHUB_TIMER_START();
+		
+		while ((IOHUB_TIMER_ELAPSED(theStartTime) < timeoutMs) && (size == 0))
+		{
+			size = 1;
+			iohub_uart_read(ctx->mUartCtx, byte, &size);
+		}
+		
+		if (size == 1)
+		{
+			//LOG_DEBUG("Toshiba: ReadByte: %X: %c", *byte, (*byte >= 32 && *byte < 127) ? *byte : '.');
+			return SUCCESS;
+		}
+		
+		IOHUB_LOG_ERROR("Toshiba ReadByte Timeout (%d ms)", timeoutMs);
+		return E_TIMEOUT;
+	}
 
 	/* -------------------------------------------------------------- */
 		
 	static ret_code_t iohub_heatpump_toshiba_read_pkt(heatpump_toshiba_ctx *ctx, heatpump_pkt *aPkt)
 	{
-		u8 buffer[sizeof(heatpump_pkt)]; // Extra space for header and metadata
-		int bytesRead = 0;
-		u32 startTime = iohub_time_now_ms();
-		
-		// Read with timeout
-		while (bytesRead < sizeof(buffer) && (iohub_time_now_ms() - startTime) < TOSHIBA_PACKET_READ_TIMEOUT_MS) 
+		aPkt->mSTX = 0x00;
+		while (aPkt->mSTX != TOSHIBA_PACKET_STX)
 		{
-			ret_code_t ret = iohub_uart_read_byte(ctx->mUartCtx, &buffer[bytesRead]);
-			if (ret == SUCCESS) 
+			if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mSTX, TOSHIBA_PACKET_READ_TIMEOUT_MS) == E_TIMEOUT)
 			{
-				bytesRead++;
-				startTime = iohub_time_now_ms(); // Reset timeout on successful read
-			} else {
-				iohub_time_delay_ms(1);
+				ctx->mfConnected = FALSE; // Mark as disconnected to retry connection
+				return E_TIMEOUT;
+			}
+
+			if (aPkt->mSTX != TOSHIBA_PACKET_STX) {
+				IOHUB_LOG_WARNING("Toshiba: Discarded byte: 0x%02X", aPkt->mSTX);
 			}
 		}
 
-		if (bytesRead == 0) 
-		{
-			LOG_DEBUG("No data received within timeout");
-			ctx->mfConnected = false; // Mark as disconnected
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mHeader[0], TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
 			return E_TIMEOUT;
-		}
-		
-		if (bytesRead < 8) { // Minimum packet size
-			LOG_DEBUG("Packet too short: %d bytes", bytesRead);
-			return E_INVALID_DATA;
-		}
-		
-		// Parse packet
-		if (memcmp(buffer, PACKET_HEADER, 3) == 0 
-			||  memcmp(buffer, HANDSHAKE_HEADER, 3) == 0 
-			|| memcmp(buffer, CONFIRM_HEADER, 3) == 0) 
-		{
-			memcpy(aPkt->mHeader, buffer, 3);
-			aPkt->mType = buffer[3];
-			aPkt->mSize = buffer[6];
-			
-			// Copy data payload
-			int dataStart = (aPkt->mType == TOSHIBA_PACKET_TYPE_REPLY) ? 14 : 12;
-			int dataLength = (bytesRead > dataStart) ? (bytesRead - dataStart - 1) : 0; // -1 for checksum
-			
-			if (dataLength > 0 && dataLength <= TOSHIBA_MAX_PACKET_SIZE) {
-				memcpy(aPkt->mData, &buffer[dataStart], dataLength);
-			}
-			
-			if (bytesRead > dataStart + dataLength) {
-				aPkt->mChecksum = buffer[bytesRead - 1];
-			}
-			
-			LOG_DEBUG("Received packet: type=0x%02X, size=%d, dataLen=%d", aPkt->mType, aPkt->mSize, dataLength);
-			LOG_BUFFER(buffer, bytesRead);
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mHeader[1], TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mType, TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mUnknown1, TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mUnknown2, TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mSize, TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
 
-			return SUCCESS;
+		for (u8 i = 0; i < aPkt->mSize; i++) {
+			if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mData[i], TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+				return E_TIMEOUT;
 		}
+
+		if (iohub_heatpump_toshiba_read_byte(ctx, &aPkt->mChecksum, TOSHIBA_PACKET_READ_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
 		
-		LOG_DEBUG("Invalid packet header");
-		return E_INVALID_DATA;
+		//Checksum verification
+		u8 calculatedCrc = iohub_heatpump_toshiba_crc((u8 *)aPkt, aPkt->mSize + 7);
+		if (calculatedCrc != aPkt->mChecksum) 
+		{
+			IOHUB_LOG_ERROR("Toshiba: Invalid crc recv=0x%02X, calc=0x%02X", aPkt->mChecksum, calculatedCrc);
+		}
+
+		LOG_DEBUG("Received packet: type=0x%02X, size=%d", aPkt->mType, aPkt->mSize);
+		LOG_BUFFER(aPkt, aPkt->mSize + 8);
+
+		return SUCCESS;
 	}
 
 	/* -------------------------------------------------------------- */
@@ -301,6 +331,7 @@ typedef struct heatpump_pkt_s
 					{
 						if (aPkt->mData[0] == expectedFunction[i])
 							return SUCCESS;
+						i++;
 					}
 				}
 			}
@@ -316,49 +347,47 @@ typedef struct heatpump_pkt_s
 		u8 buffer[TOSHIBA_MAX_PACKET_SIZE + 16]; // Extra space for packet overhead
 		int bufferPos = 0;
 		
+		//'020003 10 0000 07 01 30 01 0002'
+
 		// Add header
-		memcpy(&buffer[bufferPos], PACKET_HEADER, 3);
-		bufferPos += 3;
-		
+		buffer[bufferPos++] = TOSHIBA_PACKET_STX;
+		buffer[bufferPos++] = 0x00; //Unknown
+		buffer[bufferPos++] = 0x03; //Unknown
+
 		// Add packet type
 		buffer[bufferPos++] = aPkt->mType;
 		
 		// Add unknown bytes (pattern from reference)
-		buffer[bufferPos++] = 0; // Unknown1
-		buffer[bufferPos++] = 0; // Unknown2
+		buffer[bufferPos++] = 0x00; // Unknown
+		buffer[bufferPos++] = 0x00; // Unknown
 		
-		// Calculate and add size
-		int dataLen = aPkt->mSize;
-		buffer[bufferPos] = (aPkt->mType == TOSHIBA_PACKET_TYPE_REPLY) ? (14 + dataLen + 1 - 8) : (12 + dataLen + 1 - 8);
-		bufferPos++;
+		// Size
+		buffer[bufferPos++] = aPkt->mSize + 5;
 		
-		// Add pattern bytes from reference implementation
-		buffer[bufferPos++] = 1;
-		buffer[bufferPos++] = 48;
-		buffer[bufferPos++] = 1;
-		
-		if (aPkt->mType == TOSHIBA_PACKET_TYPE_REPLY) {
-			buffer[bufferPos++] = 0; // Extra byte for REPLY packets
-		}
-		
-		// Add data length
-		buffer[bufferPos++] = dataLen;
+		// 5 bytes hardcoded payload before data
+		buffer[bufferPos++] = 0x01;
+		buffer[bufferPos++] = 0x30;
+		buffer[bufferPos++] = 0x01;
+		buffer[bufferPos++] = 0x00;
+		buffer[bufferPos++] = 0x02;
 		
 		// Add data payload
-		if (dataLen > 0) {
-			memcpy(&buffer[bufferPos], aPkt->mData, dataLen);
-			bufferPos += dataLen;
+		if (aPkt->mSize > 0) {
+			memcpy(&buffer[bufferPos], aPkt->mData, aPkt->mSize);
+			bufferPos += aPkt->mSize;
 		}
 		
 		// Calculate and add checksum
-		u16 checksumBase = (aPkt->mType == TOSHIBA_PACKET_TYPE_REPLY) ? 308 : 438;
-		buffer[bufferPos++] = iohub_heatpump_toshiba_crc(checksumBase, aPkt->mData, dataLen);
-		
-		LOG_DEBUG("Sending packet: type=0x%02X, size=%d, total=%d", aPkt->mType, dataLen, bufferPos);
+		buffer[bufferPos] = iohub_heatpump_toshiba_crc(buffer, bufferPos);
+		bufferPos++;
+
+		LOG_DEBUG("Sending packet: type=0x%02X, size=%d, total=%d", aPkt->mType, aPkt->mSize, bufferPos);
 		LOG_BUFFER(buffer, bufferPos);
 		
 		ret_code_t ret = iohub_uart_write(ctx->mUartCtx, buffer, bufferPos);
 		
+		heatpump_pkt packet;
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
 		iohub_time_delay_ms(aTimeBetweenPacketMs);
 		
 		return ret;
@@ -369,32 +398,52 @@ typedef struct heatpump_pkt_s
 	static ret_code_t iohub_heatpump_toshiba_send_handshake_syn(heatpump_toshiba_ctx *ctx)
 	{
 		ret_code_t ret;
-		
+		heatpump_pkt packet;
+
+		LOG_DEBUG("Sending handshake SYN1 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_1, sizeof(HANDSHAKE_SYN_PACKET_1));
 		// Send handshake SYN packets in sequence
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_1, sizeof(HANDSHAKE_SYN_PACKET_1));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-		
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		//iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
+		iohub_time_delay_ms(100);
+
+		LOG_DEBUG("Sending handshake SYN2 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_2, sizeof(HANDSHAKE_SYN_PACKET_2));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_2, sizeof(HANDSHAKE_SYN_PACKET_2));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-		
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		iohub_time_delay_ms(100);
+
+		LOG_DEBUG("Sending handshake SYN3 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_3, sizeof(HANDSHAKE_SYN_PACKET_3));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_3, sizeof(HANDSHAKE_SYN_PACKET_3));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-		
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		iohub_time_delay_ms(100);
+
+		LOG_DEBUG("Sending handshake SYN4 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_4, sizeof(HANDSHAKE_SYN_PACKET_4));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_4, sizeof(HANDSHAKE_SYN_PACKET_4));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-		
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		iohub_time_delay_ms(100);
+
+		LOG_DEBUG("Sending handshake SYN5 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_5, sizeof(HANDSHAKE_SYN_PACKET_5));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_5, sizeof(HANDSHAKE_SYN_PACKET_5));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-		
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		iohub_time_delay_ms(100);
+
+		LOG_DEBUG("Sending handshake SYN6 packet ...");
+		LOG_BUFFER(HANDSHAKE_SYN_PACKET_6, sizeof(HANDSHAKE_SYN_PACKET_6));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_SYN_PACKET_6, sizeof(HANDSHAKE_SYN_PACKET_6));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
+		iohub_time_delay_ms(100);
+		
 		LOG_DEBUG("Handshake SYN packets sent");
 		return SUCCESS;
 	}
@@ -404,14 +453,18 @@ typedef struct heatpump_pkt_s
 	static ret_code_t iohub_heatpump_toshiba_send_handshake_ack(heatpump_toshiba_ctx *ctx)
 	{
 		ret_code_t ret;
-		
+		heatpump_pkt packet;
+		LOG_DEBUG("Sending handshake ACK1 packet ...");
+		LOG_BUFFER(HANDSHAKE_ACK_PACKET_1, sizeof(HANDSHAKE_ACK_PACKET_1));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_ACK_PACKET_1, sizeof(HANDSHAKE_ACK_PACKET_1));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
 		
+		LOG_DEBUG("Sending handshake ACK2 packet ...");
+		LOG_BUFFER(HANDSHAKE_ACK_PACKET_2, sizeof(HANDSHAKE_ACK_PACKET_2));
 		ret = iohub_uart_write(ctx->mUartCtx, HANDSHAKE_ACK_PACKET_2, sizeof(HANDSHAKE_ACK_PACKET_2));
 		if (ret != SUCCESS) return ret;
-		iohub_time_delay_ms(TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
+		iohub_heatpump_toshiba_read_pkt(ctx, &packet);
 
 		LOG_DEBUG("Handshake ACK packets sent");
 		return SUCCESS;
@@ -428,6 +481,10 @@ typedef struct heatpump_pkt_s
 		if (ret != SUCCESS) 
 			return ret;
 		
+		(void)iohub_heatpump_toshiba_send_handshake_ack(ctx);
+		ctx->mfConnected = true;
+		return SUCCESS;
+
 		// Wait for handshake response
 		u32 startTime = iohub_time_now_ms();
 		while ((iohub_time_now_ms() - startTime) < TOSHIBA_HANDSHAKE_TIMEOUT_MS) 
@@ -480,6 +537,8 @@ ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUA
 	ctx->mUartCtx = anUART;
 	ctx->mfConnected = false;
 
+	LOG_DEBUG("Opening UART for Toshiba Heatpump ...");
+
 	ret_code_t ret = iohub_uart_open(ctx->mUartCtx, 9600, IOHubUartParity_Even, 1);
 	if (ret != SUCCESS) {
 		LOG_DEBUG("Failed to open UART: %d", ret);
@@ -527,7 +586,7 @@ ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoH
 	
 	// Send power state
 	packet.mSize = 2;
-	packet.mData[0] = TOSHIBA_FUNCTION_STATE;
+	packet.mData[0] = TOSHIBA_FUNCTION_POWER_STATE;
 	packet.mData[1] = (aSettings->mAction == HeatpumpAction_ON) ? TOSHIBA_STATE_ON : TOSHIBA_STATE_OFF;
 	
 	ret_code_t ret = iohub_heatpump_toshiba_write_pkt(ctx, &packet, TOSHIBA_TIME_BETWEEN_PACKET_COMMAND_MS);
@@ -546,7 +605,7 @@ ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoH
 		
 		// Send mode
 		packet.mSize = 2;
-		packet.mData[0] = TOSHIBA_FUNCTION_MODE;
+		packet.mData[0] = TOSHIBA_FUNCTION_UNIT_MODE;
 		packet.mData[1] = iohub_heatpump_toshiba_mode_to_byte(aSettings->mMode);
 		
 		ret = iohub_heatpump_toshiba_write_pkt(ctx, &packet, TOSHIBA_TIME_BETWEEN_PACKET_COMMAND_MS);
@@ -629,10 +688,10 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 			// Process individual function responses
 			if (response.mSize >= 2) {
 				switch (response.mData[0]) {
-					case TOSHIBA_FUNCTION_STATE:
+					case TOSHIBA_FUNCTION_POWER_STATE:
 						aSettings->mAction = (response.mData[1] == TOSHIBA_STATE_ON) ? HeatpumpAction_ON : HeatpumpAction_OFF;
 						break;
-					case TOSHIBA_FUNCTION_MODE:
+					case TOSHIBA_FUNCTION_UNIT_MODE:
 						aSettings->mMode = iohub_heatpump_toshiba_byte_to_mode(response.mData[1]);
 						break;
 					case TOSHIBA_FUNCTION_SETPOINT:
@@ -649,9 +708,9 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 		}
 	}
 
-	queryPacket.mData[0] = TOSHIBA_FUNCTION_STATE;
+	queryPacket.mData[0] = TOSHIBA_FUNCTION_POWER_STATE;
 	iohub_heatpump_toshiba_write_pkt(ctx, &queryPacket, TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS);
-	u8 expected_state[] = {TOSHIBA_FUNCTION_STATE, 0};
+	u8 expected_state[] = {TOSHIBA_FUNCTION_POWER_STATE, 0};
 	if ( iohub_heatpump_toshiba_read_pkt_until(ctx, &response, expected_state, 2) == SUCCESS) 
 		aSettings->mAction = (response.mData[1] == TOSHIBA_STATE_ON) ? HeatpumpAction_ON : HeatpumpAction_OFF;
 	
