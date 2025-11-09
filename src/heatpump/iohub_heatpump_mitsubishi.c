@@ -34,7 +34,7 @@ typedef enum
 	0xFC CMD 0x01 0x30 SIZE DATA CRC
 */
 
-#define MITSUBISHI_BYTE_TIMEOUT			0xFFFF
+#define MITSUBISHI_STX					0xFC
 #define MITSUBISHI_TIMEOUT_MS			200
 
 #define MITSUBISHI_PROTO_REPLY			0x20
@@ -73,94 +73,90 @@ static const u8 kVaneModeMitsubishi[HeatpumpVaneMode_Count] =
 
 typedef struct heatpump_pkt_s
 {
+	u8 mSTX;
 	u8 mCmd;
+	u8 mHeader[2];
 	u8 mSize;
 	u8 mData[16];
-}heatpump_pkt;
+	u8 mChecksum;
+}__attribute__((packed))  heatpump_pkt;
 
 /* -------------------------------------------------------------- */
 
 	static u8 iohub_heatpump_mitsubishi_crc(u8 *aBuffer, u8 aSize)
 	{
-		u32 theSum = 0;
-		for (u8 i=0; i<aSize; i++)
-			theSum += aBuffer[i];
+		u32 crc = 0;
+
+		// Skip first byte (STX)
+		for (u8 i=1; i<aSize; i++)
+			crc += aBuffer[i];
 		
-		return 0xFC - (theSum & 0xFF);
+		return (u8)(-((u8)crc));
 	}
 		
 	/* -------------------------------------------------------------- */
 		
-	static int iohub_heatpump_mitsubishi_read_byte(heatpump_mitsubishi_ctx *ctx, u16 aTimeoutMs)
+	static ret_code_t iohub_heatpump_mitsubishi_read_byte(heatpump_mitsubishi_ctx *ctx, u8 *byte, u16 timeoutMs)
 	{
-		u8 theByte = 0xFF;
-		u16 theSize = 0;
+		u16 size = 0;
 		
 		u32 theStartTime = IOHUB_TIMER_START();
-		
-		while ((IOHUB_TIMER_ELAPSED(theStartTime) < aTimeoutMs) && (theSize == 0))
+
+		while ((IOHUB_TIMER_ELAPSED(theStartTime) < timeoutMs) && (size == 0))
 		{
-			theSize = 1;
-			iohub_uart_read(ctx->mUartCtx, &theByte, &theSize);
+			size = 1;
+			iohub_uart_read(ctx->mUartCtx, byte, &size);
+		}
+
+		if (size == 1)
+		{
+			//LOG_DEBUG("Mitsu ReadByte: %X", *byte);
+			return SUCCESS;
 		}
 		
-		if (theSize == 1)
-		{
-			LOG_DEBUG("Mitsu ReadByte: %X", theByte);
-			return theByte;
-		}
-		
-		IOHUB_LOG_ERROR("Mitsu ReadByte Timeout (%d ms)", aTimeoutMs);
-		return MITSUBISHI_BYTE_TIMEOUT;
+		IOHUB_LOG_ERROR("Mitsu ReadByte Timeout (%d ms)", timeoutMs);
+		return E_TIMEOUT;
 	}
 
 	/* -------------------------------------------------------------- */
 		
 	static ret_code_t iohub_heatpump_mitsubishi_read_pkt(heatpump_mitsubishi_ctx *ctx, heatpump_pkt *aPkt)
 	{
-		int theByte = 0x00;
-		while (theByte != 0xFC)
+		aPkt->mSTX = 0x00;
+		while (aPkt->mSTX != MITSUBISHI_STX)
 		{
-			theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);
-			if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+			if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mSTX, MITSUBISHI_TIMEOUT_MS) == E_TIMEOUT)
 			{
 				ctx->mfConnected = FALSE; // Mark as disconnected to retry connection
 				return E_TIMEOUT;
 			}
+
+			if (aPkt->mSTX != MITSUBISHI_STX) {
+				IOHUB_LOG_WARNING("Mitsu: Discarded byte: 0x%02X", aPkt->mSTX);
+			}
 		}
-		
-		theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);
-		if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+		if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mCmd, MITSUBISHI_TIMEOUT_MS) != SUCCESS)
 			return E_TIMEOUT;
-
-		aPkt->mCmd = theByte & 0xFF;
-
-		if (iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS) != 0x01)
-			return E_INVALID_REPLY;
-		
-		if (iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS) != 0x30)
-			return E_INVALID_REPLY;
-		
-		theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);
-		if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+		if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mHeader[0], MITSUBISHI_TIMEOUT_MS) != SUCCESS)
 			return E_TIMEOUT;
-
-		aPkt->mSize = theByte & 0xFF;
-
+		if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mHeader[1], MITSUBISHI_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+		if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mSize, MITSUBISHI_TIMEOUT_MS) != SUCCESS)
+			return E_TIMEOUT;
+			
 		for (int i=0; i<aPkt->mSize; i++)
 		{
-			theByte = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS);
-			if (theByte == MITSUBISHI_BYTE_TIMEOUT)
+			if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mData[i], MITSUBISHI_TIMEOUT_MS) != SUCCESS)
 				return E_TIMEOUT;
-			aPkt->mData[i] = theByte & 0xFF;
 		}
-		
-		int theChecksum = iohub_heatpump_mitsubishi_read_byte(ctx, MITSUBISHI_TIMEOUT_MS) & 0xFF;
-		if (theChecksum == MITSUBISHI_BYTE_TIMEOUT)
+
+		if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mChecksum, MITSUBISHI_TIMEOUT_MS) != SUCCESS)
 			return E_TIMEOUT;
 
-		//TODO: Check CRC here
-		
+		u8 calculatedCrc = iohub_heatpump_mitsubishi_crc((u8*)aPkt, aPkt->mSize + 5);
+		if (calculatedCrc != aPkt->mChecksum)
+			IOHUB_LOG_ERROR("Mitsu: Invalid crc rcv=0x%02X, calc=0x%02X continue...", aPkt->mChecksum, calculatedCrc);
+
 		return SUCCESS;
 	}
 
@@ -168,7 +164,7 @@ typedef struct heatpump_pkt_s
 
 	static ret_code_t iohub_heatpump_mitsubishi_write_pkt(heatpump_mitsubishi_ctx *ctx, heatpump_pkt *aPkt)
 	{
-		u8 theBuffer[32] = {0xFC, aPkt->mCmd, 0x01, 0x30, aPkt->mSize};
+		u8 theBuffer[32] = {MITSUBISHI_STX, aPkt->mCmd, 0x01, 0x30, aPkt->mSize};
 		memcpy(&theBuffer[5], aPkt->mData, aPkt->mSize);
 		theBuffer[5 + aPkt->mSize] = iohub_heatpump_mitsubishi_crc(theBuffer, aPkt->mSize + 5);
 		
