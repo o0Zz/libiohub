@@ -8,8 +8,8 @@
 
 /* UART Configuration for ESP32-C6 */
 #define ESP_UART_NUM				UART_NUM_1    /*!< UART port number to use */
-#define ESP_UART_BUF_SIZE			1024          /*!< UART buffer size */
-#define ESP_UART_QUEUE_SIZE			10            /*!< UART event queue size */
+#define ESP_UART_BUF_SIZE			512           /*!< UART buffer size - increased for larger packets */
+#define ESP_UART_QUEUE_SIZE			16            /*!< UART event queue size - increased */
 
 #define LOG_UART_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
 
@@ -110,19 +110,17 @@ ret_code_t iohub_uart_read_byte(uart_ctx *ctx, u8 *byte)
 ret_code_t iohub_uart_read(uart_ctx *ctx, u8 *buffer, u16 *size)
 {
     if (!buffer || !size) {
-        if (size) *size = 0;
         return E_INVALID_PARAMETERS;
     }
 
-    u16 theIdx = 0;
     u16 max_size = *size;
+    *size = 0;
 
     // Check available data
     size_t available = 0;
     esp_err_t ret = uart_get_buffered_data_len(ESP_UART_NUM, &available);
     if (ret != ESP_OK) {
         IOHUB_LOG_ERROR("Failed to get buffered data length: %s", esp_err_to_name(ret));
-        *size = 0;
         return E_READ_ERROR;
     }
 
@@ -131,11 +129,10 @@ ret_code_t iohub_uart_read(uart_ctx *ctx, u8 *buffer, u16 *size)
         u16 to_read = (available > max_size) ? max_size : (u16)available;
         int len = uart_read_bytes(ESP_UART_NUM, buffer, to_read, 0);
         if (len > 0) {
-            theIdx = (u16)len;
+            *size = (u16)len;
         }
     }
 
-    *size = theIdx;
     return SUCCESS;
 }
 
