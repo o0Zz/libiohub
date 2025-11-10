@@ -157,6 +157,8 @@ typedef struct heatpump_pkt_s
 		if (calculatedCrc != aPkt->mChecksum)
 			IOHUB_LOG_ERROR("Mitsu: Invalid crc rcv=0x%02X, calc=0x%02X continue...", aPkt->mChecksum, calculatedCrc);
 
+		LOG_DEBUG("Mitsu Read Packet: cmd=0x%02X, size=%d", aPkt->mCmd, aPkt->mSize);
+		LOG_BUFFER(aPkt, aPkt->mSize + 6);
 		return SUCCESS;
 	}
 
@@ -246,7 +248,7 @@ ret_code_t iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *ctx, con
 	thePkt.mSize = 16;
 	
 	thePkt.mData[0] = MitsubishiPacketType_SetSettingsInformation;
-	thePkt.mData[1] |= 0x0F; // Inform we want to change power 0x01, mode 0x02, temp 0x04, fan 0x08, (VANE:0x10 DIR:0x80 not changed) 
+	thePkt.mData[1] |= 0x1F; // Inform we want to change power 0x01, mode 0x02, temp 0x04, fan 0x08, vane 0x10 (DIR:0x80 not changed) 
 	
 	//Power
 	thePkt.mData[3] = (aSettings->mAction == HeatpumpAction_ON) ? 0x01 : 0x00;
