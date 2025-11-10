@@ -20,12 +20,6 @@
 #	define LOG_BUFFER(buf, size)		do{}while(0)
 #endif
 
-typedef enum 
-{
-	ToshibaPacketType_Query = 0x01,
-	ToshibaPacketType_Command = 0x02
-} ToshibaPacketType;
-
 /* -------------------------------------------------------------- */
 
 #define TOSHIBA_TIME_BETWEEN_PACKET_COMMAND_MS		600
@@ -47,7 +41,7 @@ typedef enum
 #define TOSHIBA_PACKET_TYPE_UNKNOWN1		0x01
 #define TOSHIBA_PACKET_TYPE_UNKNOWN2		0x02
 #define TOSHIBA_PACKET_TYPE_COMMAND			0x10
-#define TOSHIBA_PACKET_TYPE_STATUS		0x11
+#define TOSHIBA_PACKET_TYPE_STATUS			0x11
 
 // Function codes
 #define TOSHIBA_FUNCTION_POWER_STATE		0x80
@@ -116,16 +110,6 @@ typedef enum
 #define TOSHIBA_SWING_POS5					0x54
 
 /* -------------------------------------------------------------- */
-
-// Handshake packets
-static const u8 HANDSHAKE_SYN_PACKET_1[8]  = {0x02, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x02};
-static const u8 HANDSHAKE_SYN_PACKET_2[9]  = {0x02, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x01, 0x02, 0xFE};
-static const u8 HANDSHAKE_SYN_PACKET_3[10] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x02, 0xFA};
-static const u8 HANDSHAKE_SYN_PACKET_4[10] = {0x02, 0x00, 0x01, 0x81, 0x01, 0x00, 0x02, 0x00, 0x00, 0x7B}; //ACK for HVAC request
-static const u8 HANDSHAKE_SYN_PACKET_5[10] = {0x02, 0x00, 0x01, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFB};
-static const u8 HANDSHAKE_SYN_PACKET_6[8]  = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0xFE};
-static const u8 HANDSHAKE_SYN_PACKET_7[10] = {0x02, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFB};
-static const u8 HANDSHAKE_SYN_PACKET_8[10] = {0x02, 0x00, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFA};
 
 typedef struct heatpump_pkt_s
 {
@@ -321,7 +305,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	static ret_code_t iohub_heatpump_toshiba_write_pkt(heatpump_toshiba_ctx *ctx, heatpump_pkt *aPkt, ToshibaPacketType packetType)
+	static ret_code_t iohub_heatpump_toshiba_send_command(heatpump_toshiba_ctx *ctx, u8 *data, u16 dataSize)
 	{
 		u8 buffer[64]; // Extra space for packet overhead
 		int bufferPos = 0;
@@ -329,36 +313,36 @@ typedef struct heatpump_pkt_s
 		// Add header
 		buffer[bufferPos++] = TOSHIBA_PACKET_STX;
 		buffer[bufferPos++] = 0x00; //Unknown
-		buffer[bufferPos++] = 0x03; //Unknown
+		buffer[bufferPos++] = 0x03; //Application protocol  (0x00 = handshake, 0x01 = handshake , 0x03 = HVAC control)
 
 		// Add packet type
-		buffer[bufferPos++] = aPkt->mType;
+		buffer[bufferPos++] = TOSHIBA_PACKET_TYPE_COMMAND;
 		
 		// Add unknown bytes (pattern from reference)
 		buffer[bufferPos++] = 0x00; // Unknown
 		buffer[bufferPos++] = 0x00; // Unknown
 		
 		// Size
-		buffer[bufferPos++] = aPkt->mSize + 5;
+		buffer[bufferPos++] = dataSize + 5;
 		
 		// 5 bytes hardcoded payload before data
 		buffer[bufferPos++] = 0x01;
 		buffer[bufferPos++] = 0x30;
 		buffer[bufferPos++] = 0x01;
 		buffer[bufferPos++] = 0x00;
-		buffer[bufferPos++] = packetType; // Query=0x01 OR Command(Set)=0x02 ?
+		buffer[bufferPos++] = dataSize; //Size of the subquery
 		
 		// Add data payload
-		if (aPkt->mSize > 0) {
-			memcpy(&buffer[bufferPos], aPkt->mData, aPkt->mSize);
-			bufferPos += aPkt->mSize;
+		if (dataSize > 0) {
+			memcpy(&buffer[bufferPos], data, dataSize);
+			bufferPos += dataSize;
 		}
 		
 		// Calculate and add checksum
 		buffer[bufferPos] = iohub_heatpump_toshiba_crc(buffer, bufferPos);
 		bufferPos++;
 
-		LOG_DEBUG("Sending packet: type=0x%02X, size=%d, total=%d", aPkt->mType, aPkt->mSize, bufferPos);
+		LOG_DEBUG("Sending command size=%d", bufferPos);
 		LOG_BUFFER(buffer, bufferPos);
 		
 		return iohub_uart_write(ctx->mUartCtx, buffer, bufferPos);
@@ -366,10 +350,20 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
+	
 	static ret_code_t iohub_heatpump_toshiba_connect(heatpump_toshiba_ctx *ctx)
 	{
 		ret_code_t ret;
 		heatpump_pkt packet;
+
+		static const u8 HANDSHAKE_SYN_PACKET_1[8]  = {0x02, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x02};
+		static const u8 HANDSHAKE_SYN_PACKET_2[9]  = {0x02, 0xFF, 0xFF, 0x01, 0x00, 0x00, 0x01, 0x02, 0xFE};
+		static const u8 HANDSHAKE_SYN_PACKET_3[10] = {0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x02, 0xFA};
+		static const u8 HANDSHAKE_SYN_PACKET_4[10] = {0x02, 0x00, 0x01, 0x81, 0x01, 0x00, 0x02, 0x00, 0x00, 0x7B}; //ACK for HVAC request
+		static const u8 HANDSHAKE_SYN_PACKET_5[10] = {0x02, 0x00, 0x01, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFB};
+		static const u8 HANDSHAKE_SYN_PACKET_6[8]  = {0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0xFE};
+		static const u8 HANDSHAKE_SYN_PACKET_7[10] = {0x02, 0x00, 0x02, 0x01, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFB};
+		static const u8 HANDSHAKE_SYN_PACKET_8[10] = {0x02, 0x00, 0x02, 0x02, 0x00, 0x00, 0x02, 0x00, 0x00, 0xFA};
 
 		struct sync_pkt{ const u8* data; size_t size; };
 		const struct sync_pkt HANDSHAKE_SYN_PACKETS[] = {
@@ -404,24 +398,8 @@ typedef struct heatpump_pkt_s
 
 	static ret_code_t iohub_heatpump_toshiba_query(heatpump_toshiba_ctx *ctx, u8 function, heatpump_pkt *result)
 	{
-		heatpump_pkt queryPacket;
-
-		if (!ctx) {
-			return E_INVALID_PARAMETERS;
-		}
-		
-		if (!ctx->mfConnected) 
-		{
-			ret_code_t ret = iohub_heatpump_toshiba_connect(ctx);
-			if (ret != SUCCESS)
-				return E_INVALID_NOT_CONNECTED;
-		}
-
-		queryPacket.mType = TOSHIBA_PACKET_TYPE_COMMAND;
-		queryPacket.mSize = 1;
-		queryPacket.mData[0] = function;
-		
-		ret_code_t ret = iohub_heatpump_toshiba_write_pkt(ctx, &queryPacket, ToshibaPacketType_Query);
+		u8 buffer[] = { function };
+		ret_code_t ret = iohub_heatpump_toshiba_send_command(ctx, buffer, sizeof(buffer));
 		if (ret != SUCCESS) 
 			return ret;
 		
@@ -441,15 +419,10 @@ typedef struct heatpump_pkt_s
 
 	static ret_code_t iohub_heatpump_toshiba_command(heatpump_toshiba_ctx *ctx, u8 function, u8 value)
 	{
-		heatpump_pkt packet;
 		heatpump_pkt result;
 
-		packet.mType = TOSHIBA_PACKET_TYPE_COMMAND;
-		packet.mSize = 2;
-		packet.mData[0] = function;
-		packet.mData[1] = value;
-
-		ret_code_t ret = iohub_heatpump_toshiba_write_pkt(ctx, &packet, ToshibaPacketType_Command);
+		u8 buffer[] = { function, value };
+		ret_code_t ret = iohub_heatpump_toshiba_send_command(ctx, buffer, sizeof(buffer));
 		if (ret != SUCCESS) 
 			return ret;
 
