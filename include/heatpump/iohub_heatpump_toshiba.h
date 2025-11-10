@@ -10,7 +10,7 @@ extern "C" {
 typedef struct heatpump_toshiba_ctx_s
 {
     uart_ctx						*mUartCtx;
-	bool							mfConnected;
+	BOOL							mfConnected;
 } heatpump_toshiba_ctx;
 
 /* -------------------------------------------------------------- */

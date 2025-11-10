@@ -127,7 +127,7 @@ typedef struct heatpump_pkt_s
 		{
 			if (iohub_heatpump_mitsubishi_read_byte(ctx, &aPkt->mSTX, MITSUBISHI_TIMEOUT_MS) == E_TIMEOUT)
 			{
-				ctx->mfConnected = FALSE; // Mark as disconnected to retry connection
+				//ctx->mfConnected = FALSE; // Mark as disconnected to retry connection
 				return E_TIMEOUT;
 			}
 
