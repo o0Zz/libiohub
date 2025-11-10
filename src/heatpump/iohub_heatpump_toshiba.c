@@ -5,15 +5,13 @@
 #include "utils/iohub_errors.h"
 #include "platform/iohub_platform.h"
 
-//https://github.com/burrocargado/toshiba-aircon-mqtt-bridge/tree/master
 //https://github.com/ormsport/ToshibaCarrierHvac/blob/main/src/ToshibaCarrierHvac.cpp
-// https://github.com/IntExCZ/Toshiba-HVAC/blob/main/HomeAssistant/AppDaemon/apps/toshiba-hvac.py
+//https://github.com/IntExCZ/Toshiba-HVAC/blob/main/HomeAssistant/AppDaemon/apps/toshiba-hvac.py
 
-//Daikin: https://github.com/Arnold-n/P1P2MQTT
 #define DEBUG
 
 #ifdef DEBUG
-#	define LOG_DEBUG(...)				IOHUB_LOG_INFO(__VA_ARGS__)
+#	define LOG_DEBUG(...)				IOHUB_LOG_DEBUG(__VA_ARGS__)
 #	define LOG_BUFFER(buf, size)		IOHUB_LOG_BUFFER(buf, size)
 #else
 #	define LOG_DEBUG(...)				do{}while(0)
@@ -22,14 +20,8 @@
 
 /* -------------------------------------------------------------- */
 
-#define TOSHIBA_TIME_BETWEEN_PACKET_COMMAND_MS		600
-#define TOSHIBA_TIME_BETWEEN_PACKET_QUERY_MS		200
-
 // Toshiba protocol constants
 #define TOSHIBA_MAX_PACKET_SIZE				0xFF
-#define TOSHIBA_HANDSHAKE_TIMEOUT_MS		5000
-
-#define TOSHIBA_COMMAND_TIMEOUT_MS			1000
 #define TOSHIBA_PACKET_READ_TIMEOUT_MS		250
 
 #define TOSHIBA_PACKET_STX					0x02
@@ -44,25 +36,60 @@
 #define TOSHIBA_PACKET_TYPE_STATUS			0x11
 
 // Function codes
-#define TOSHIBA_FUNCTION_POWER_STATE		0x80
-#define TOSHIBA_FUNCTION_POWER_SELECTION	0x87
-#define TOSHIBA_FUNCTION_STATUS				0x88
-#define TOSHIBA_FUNCTION_TIMER_ON			0x90
-#define TOSHIBA_FUNCTION_TIMER_OFF			0x94
-#define TOSHIBA_FUNCTION_FANMODE			0xA0
+#define TOSHIBA_FUNCTION_POWER_STATE		0x80 //ON/OFF
+#define TOSHIBA_FUNCTION_UNKNOWN81			0x81 //1 byte long 00
+#define TOSHIBA_FUNCTION_UNKNOWN82			0x82 //4 byte long 00 01 01 01
+#define TOSHIBA_FUNCTION_UNKNOWN86			0x86 //9 byte long 05 00 00 17 00 00 00 03 00 00 
+#define TOSHIBA_FUNCTION_POWER_SELECTION	0x87 //64
+#define TOSHIBA_FUNCTION_STATUS				0x88 //41
+#define TOSHIBA_FUNCTION_UNKNOWN89			0x89 //03 FF
+
+#define TOSHIBA_FUNCTION_TIMER_ON			0x90   //0x42 = OFF / 0x41 = ON
+#define TOSHIBA_FUNCTION_TIMER_ON_TIME		0x92   //2 byte long: 1st byte is HOURS ((HOUR − 0x0A) % 24) / 2nd byte is minutes (i.e: 00 (00), 0F (15), 1E (30), 2D (45))
+#define TOSHIBA_FUNCTION_TIMER_OFF			0x94   //0x42 = OFF
+#define TOSHIBA_FUNCTION_TIMER_OFF_TIME	    0x96   //2 byte long: 1st byte is HOURS ((HOUR − 0x0A) % 24) / 2nd byte is minutes (i.e: 00 (00), 0F (15), 1E (30), 2D (45))
+#define TOSHIBA_FUNCTION_TIMER_UNKNOWN98	0x98   //1 byte long
+#define TOSHIBA_FUNCTION_TIMER_UNKNOWN99	0x99   //1 byte long
+#define TOSHIBA_FUNCTION_TIMER_UNKNOWN9A	0x9A   //5 byte long
+
+//0xAx related to fan
+#define TOSHIBA_FUNCTION_FANMODE			0xA0 
 #define TOSHIBA_FUNCTION_SWING				0xA3
-#define TOSHIBA_FUNCTION_UNIT_MODE			0xB0
+
+//0xBx related to temperature
+#define TOSHIBA_FUNCTION_UNIT_MODE			0xB0 
 #define TOSHIBA_FUNCTION_SETPOINT			0xB3
+#define TOSHIBA_FUNCTION_UNKNOWNB4			0xB4 // 0x32
+#define TOSHIBA_FUNCTION_UNKNOWNB9			0xB9 // 2 byte long
+#define TOSHIBA_FUNCTION_UNKNOWNBA			0xBA // 1 byte long
 #define TOSHIBA_FUNCTION_ROOMTEMP			0xBB
 #define TOSHIBA_FUNCTION_OUTSIDETEMP		0xBE
-#define TOSHIBA_FUNCTION_PURE				0xC7
-#define TOSHIBA_FUNCTION_WIFILED1			0xDE
-#define TOSHIBA_FUNCTION_WIFILED2			0xDF
+
+#define TOSHIBA_FUNCTION_UNKNOWNC0			0xC0
+#define TOSHIBA_FUNCTION_UNKNOWNC6			0xC6
+#define TOSHIBA_FUNCTION_PURE				0xC7 //0x10
+#define TOSHIBA_FUNCTION_PURE2				0xCB //0x10
+
+//0xDx related to led
+#define TOSHIBA_FUNCTION_UNKNOWND0			0xD0 //0x00
+#define TOSHIBA_FUNCTION_UNKNOWND7			0xD7 //0x00
+#define TOSHIBA_FUNCTION_UNKNOWND8			0xD8 //62 byte long (Full filed with 0x00)
+#define TOSHIBA_FUNCTION_UNKNOWND9			0xD9 //42 byte long (Full filed with 0x00)
+#define TOSHIBA_FUNCTION_UNKNOWNDA			0xDA //138 byte long (Full filed with 0x00)
+#define TOSHIBA_FUNCTION_UNKNOWNDB			0xDB //42 byte long (Full filed with 0x00)
+#define TOSHIBA_FUNCTION_WIFILED1			0xDE //0x00
+#define TOSHIBA_FUNCTION_WIFILED2			0xDF //0x00
+
+#define TOSHIBA_FUNCTION_UNKNOWNE2			0xE2 //5 bytes long
+#define TOSHIBA_FUNCTION_UNKNOWNE3			0xE3 //5 bytes long
+#define TOSHIBA_FUNCTION_UNKNOWNE4			0xE4 //8 bytes long 1a 1a 00 00 00 00 00 00
+#define TOSHIBA_FUNCTION_UNKNOWNE5			0xE5 //8 bytes long 7f 7f 7f fe fe fe fe 00
+#define TOSHIBA_FUNCTION_UNKNOWNEE			0xEE //2 bytes long 2c 03
+
+//0xFx related to special commands
 #define TOSHIBA_FUNCTION_SPECIAL_MODE		0xF7
 #define TOSHIBA_FUNCTION_GROUP1				0xF8
-
-// Status values
-#define TOSHIBA_STATUS_READY				0x42
+#define TOSHIBA_FUNCTION_UNKNOWNFE			0xFE //0x30
 
 // State values  
 #define TOSHIBA_POWER_STATE_ON				0x30
@@ -122,7 +149,6 @@ typedef struct heatpump_pkt_s
 	u8 mData[TOSHIBA_MAX_PACKET_SIZE];
 	u8 mChecksum;
 } __attribute__((packed)) heatpump_pkt;
-
 
 	/* -------------------------------------------------------------- */
 	
@@ -233,9 +259,9 @@ typedef struct heatpump_pkt_s
 	{
 		u16 size = 0;
 		
-		u32 theStartTime = IOHUB_TIMER_START();
+		u32 start = IOHUB_TIMER_START();
 		
-		while ((IOHUB_TIMER_ELAPSED(theStartTime) < timeoutMs) && (size == 0))
+		while ((IOHUB_TIMER_ELAPSED(start) < timeoutMs) && (size == 0))
 		{
 			size = 1;
 			iohub_uart_read(ctx->mUartCtx, byte, &size);
@@ -247,7 +273,8 @@ typedef struct heatpump_pkt_s
 			return SUCCESS;
 		}
 		
-		IOHUB_LOG_ERROR("Toshiba ReadByte Timeout (%d ms)", timeoutMs);
+			//This error is expected when we try to flush the rx buffer
+		LOG_DEBUG("Toshiba ReadByte Timeout (%d ms)", timeoutMs);
 		return E_TIMEOUT;
 	}
 
@@ -313,7 +340,7 @@ typedef struct heatpump_pkt_s
 		// Add header
 		buffer[bufferPos++] = TOSHIBA_PACKET_STX;
 		buffer[bufferPos++] = 0x00; //Unknown
-		buffer[bufferPos++] = 0x03; //Application protocol  (0x00 = handshake, 0x01 = handshake , 0x03 = HVAC control)
+		buffer[bufferPos++] = 0x03; //Application protocol  (0x00 = handshake, 0x01 = ... , 0x03 = HVAC control)
 
 		// Add packet type
 		buffer[bufferPos++] = TOSHIBA_PACKET_TYPE_COMMAND;
@@ -350,7 +377,35 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	
+	static ret_code_t iohub_heatpump_toshiba_query(heatpump_toshiba_ctx *ctx, u8 function, heatpump_pkt *result)
+	{
+		u8 buffer[] = { function };
+		ret_code_t ret = iohub_heatpump_toshiba_send_command(ctx, buffer, sizeof(buffer));
+		if (ret != SUCCESS) 
+			return ret;
+		
+		while(iohub_heatpump_toshiba_read_pkt(ctx, result) == SUCCESS)
+		{
+			if (result->mType == (TOSHIBA_PACKET_TYPE_COMMAND | TOSHIBA_PACKET_TYPE_REPLY_MASK))
+			{ 
+				//LOG_DEBUG("Query response received for function: '0x%X' (Size=%d)", function, result->mSize);
+				return SUCCESS;
+			}
+		}
+
+		return E_TIMEOUT;
+	}
+
+	/* -------------------------------------------------------------- */
+
+	static void iohub_heatpump_toshiba_flush_rx(heatpump_toshiba_ctx *ctx)
+	{
+		heatpump_pkt packet;
+		while(iohub_heatpump_toshiba_read_pkt(ctx, &packet) == SUCCESS);
+	}
+
+	/* -------------------------------------------------------------- */
+
 	static ret_code_t iohub_heatpump_toshiba_connect(heatpump_toshiba_ctx *ctx)
 	{
 		ret_code_t ret;
@@ -377,7 +432,10 @@ typedef struct heatpump_pkt_s
 			{HANDSHAKE_SYN_PACKET_8, sizeof(HANDSHAKE_SYN_PACKET_8)}
 		};
 
-		for  (int i = 0; i < 8; i++) 
+		ctx->mfConnected = FALSE;
+
+		LOG_DEBUG("Toshiba: Starting handshake sequence ...");
+		for  (int i = 0; i < sizeof(HANDSHAKE_SYN_PACKETS)/sizeof(HANDSHAKE_SYN_PACKETS[0]); i++) 
 		{
 			LOG_DEBUG("Sending handshake SYN%d packet ...", i + 1);
 			LOG_BUFFER(HANDSHAKE_SYN_PACKETS[i].data, HANDSHAKE_SYN_PACKETS[i].size);
@@ -387,34 +445,21 @@ typedef struct heatpump_pkt_s
 				IOHUB_LOG_ERROR("Toshiba: Handshake SYN%d write failed: %d", i + 1, ret);
 				return ret;
 			}
-			while(iohub_heatpump_toshiba_read_pkt(ctx, &packet) == SUCCESS);
+
+			iohub_heatpump_toshiba_flush_rx(ctx);
 		}
 
+		if (iohub_heatpump_toshiba_query(ctx, TOSHIBA_FUNCTION_STATUS, &packet) != SUCCESS) 
+		{
+			IOHUB_LOG_ERROR("Toshiba: Handshake failed - no response to status query");
+			return E_TIMEOUT;
+		}
+
+		IOHUB_LOG_INFO("Toshiba Heatpump connected successfully");
 		ctx->mfConnected = TRUE;
 		return SUCCESS;	
 	}
 	
-	/* -------------------------------------------------------------- */
-
-	static ret_code_t iohub_heatpump_toshiba_query(heatpump_toshiba_ctx *ctx, u8 function, heatpump_pkt *result)
-	{
-		u8 buffer[] = { function };
-		ret_code_t ret = iohub_heatpump_toshiba_send_command(ctx, buffer, sizeof(buffer));
-		if (ret != SUCCESS) 
-			return ret;
-		
-		while(iohub_heatpump_toshiba_read_pkt(ctx, result) == SUCCESS)
-		{
-			if (result->mType == (TOSHIBA_PACKET_TYPE_COMMAND | TOSHIBA_PACKET_TYPE_REPLY_MASK))
-			{ 
-				LOG_DEBUG("Query response received for function: '0x%X' (Size=%d)", function, result->mSize);
-				return SUCCESS;
-			}
-		}
-
-		return E_TIMEOUT;
-	}
-
 	/* -------------------------------------------------------------- */
 
 	static ret_code_t iohub_heatpump_toshiba_command(heatpump_toshiba_ctx *ctx, u8 function, u8 value)
@@ -438,6 +483,42 @@ typedef struct heatpump_pkt_s
 		return E_TIMEOUT;
 	}
 
+	
+	/* -------------------------------------------------------------- */
+	
+	static void iohub_heatpump_toshiba_dump_all(heatpump_toshiba_ctx *ctx, u8 *functions, u16 functionCount)
+	{
+		heatpump_pkt response;
+
+		IOHUB_LOG_INFO("----------------------------------------------------");
+		IOHUB_LOG_INFO("----------------        DUMP        ----------------");
+		IOHUB_LOG_INFO("----------------------------------------------------");
+		for (u16 i = 0; i <= 0xFF; i++) 
+		{
+			if (functions != NULL && functionCount > 0)
+			{
+				bool found = false;
+				for(u8 f = 0; f < functionCount; f++) 
+				{
+					if (i == functions[f]) 
+					{
+						found = true;
+						break;
+					}	
+				}
+
+				if (!found) 
+					continue;
+			}
+
+			if (iohub_heatpump_toshiba_query(ctx, i, &response) == SUCCESS) 
+			{
+				IOHUB_LOG_INFO("Function 0x%02X: Size=%d Data=", i, response.mSize);
+				LOG_BUFFER(&response.mData[7], response.mSize - 7);
+			}
+		}
+	}
+	
 /* -------------------------------------------------------------- */
 
 ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUART)
@@ -518,7 +599,10 @@ ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoH
 			return ret;
 	}
 	
+	iohub_heatpump_toshiba_flush_rx(ctx);
+	
 	LOG_DEBUG("Settings sent successfully");
+
 	return SUCCESS;
 }
 
@@ -539,24 +623,42 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 			return E_INVALID_NOT_CONNECTED;
 	}
 
+	memset(aSettings, 0x00, sizeof(IoHubHeatpumpSettings));
+
 	ret_code_t ret = iohub_heatpump_toshiba_query(ctx, TOSHIBA_FUNCTION_GROUP1, &response);
-	if ((ret == SUCCESS) && (response.mSize >= 12) && (response.mData[7] == TOSHIBA_FUNCTION_GROUP1)) 
+	if ((ret != SUCCESS) || (response.mSize < 12) || (response.mData[7] != TOSHIBA_FUNCTION_GROUP1))
 	{
-		aSettings->mMode = iohub_heatpump_toshiba_byte_to_mode(response.mData[8]);
-		aSettings->mTemperature = response.mData[9];
-		aSettings->mFanSpeed = iohub_heatpump_toshiba_byte_to_fanspeed(response.mData[10]);
-		// response.mData[4] is operation mode, not directly mapped to our structure
+		IOHUB_LOG_ERROR("Toshiba: Failed to get state group1");
+		return E_INVALID_DATA;
 	}
 
+	aSettings->mMode = iohub_heatpump_toshiba_byte_to_mode(response.mData[8]);
+	aSettings->mTemperature = response.mData[9];
+	aSettings->mFanSpeed = iohub_heatpump_toshiba_byte_to_fanspeed(response.mData[10]);
+	// response.mData[11] is operation mode, not directly mapped to our structure
+
 	ret = iohub_heatpump_toshiba_query(ctx, TOSHIBA_FUNCTION_POWER_STATE, &response);
-	if ((ret == SUCCESS) && (response.mSize >= 9) && (response.mData[7] == TOSHIBA_FUNCTION_POWER_STATE)) 
-		aSettings->mAction = (response.mData[8] == TOSHIBA_POWER_STATE_ON) ? HeatpumpAction_ON : HeatpumpAction_OFF;
+	if ((ret != SUCCESS) || (response.mSize < 9) || (response.mData[7] != TOSHIBA_FUNCTION_POWER_STATE)) 
+	{
+		IOHUB_LOG_ERROR("Toshiba: Failed to get state power");
+		return E_INVALID_DATA;
+	}
+
+	aSettings->mAction = (response.mData[8] == TOSHIBA_POWER_STATE_ON) ? HeatpumpAction_ON : HeatpumpAction_OFF;
 
 	ret = iohub_heatpump_toshiba_query(ctx, TOSHIBA_FUNCTION_SWING, &response);
-	if ((ret == SUCCESS) && (response.mSize >= 9) && (response.mData[7] == TOSHIBA_FUNCTION_SWING)) 
-		aSettings->mVaneMode = iohub_heatpump_toshiba_byte_to_vane(response.mData[1]);
+	if ((ret != SUCCESS) || (response.mSize < 9) || (response.mData[7] != TOSHIBA_FUNCTION_SWING)) 
+	{
+		IOHUB_LOG_ERROR("Toshiba: Failed to get state swing");
+		return E_INVALID_DATA;
+	}
 
-	LOG_DEBUG("State retrieved: mode=%d, temp=%d, fan=%d, action=%d, vane=%d", aSettings->mMode, aSettings->mTemperature, aSettings->mFanSpeed, aSettings->mAction, aSettings->mVaneMode);
+	aSettings->mVaneMode = iohub_heatpump_toshiba_byte_to_vane(response.mData[8]);
+
+	iohub_heatpump_toshiba_flush_rx(ctx);
+	
+	LOG_DEBUG("Toshiba state: mode=%d, temp=%d, fan=%d, action=%d, vane=%d", aSettings->mMode, aSettings->mTemperature, aSettings->mFanSpeed, aSettings->mAction, aSettings->mVaneMode);
+	
 	return SUCCESS;
 }
 

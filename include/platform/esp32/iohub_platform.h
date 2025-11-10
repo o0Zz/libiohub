@@ -19,7 +19,7 @@ static inline void iohub_platform_init()
 #define IOHUB_LOG_INFO(...)				ESP_LOGI("iohub", __VA_ARGS__)
 #define IOHUB_LOG_WARNING(...)			ESP_LOGW("iohub", __VA_ARGS__)
 #define IOHUB_LOG_ERROR(...)		    ESP_LOGE("iohub", __VA_ARGS__)
-#define IOHUB_LOG_BUFFER(buf, size)	    ESP_LOG_BUFFER_HEXDUMP("iohub", buf, size, ESP_LOG_INFO)
+#define IOHUB_LOG_BUFFER(buf, size)	    ESP_LOG_BUFFER_HEXDUMP("iohub", buf, size, ESP_LOG_DEBUG)
 
 /* GPIO Digital I/O Macros for ESP32 */
 #define iohub_digital_set_pin_mode(aPin, aPinMode) \

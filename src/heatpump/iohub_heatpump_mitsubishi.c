@@ -297,6 +297,8 @@ ret_code_t iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *ctx, IoH
 			return theRet;
 	}
 
+	memset(aSettings, 0x00, sizeof(IoHubHeatpumpSettings));
+
 	thePkt.mCmd = 0x42; //Get
 	thePkt.mSize = 16;
 	thePkt.mData[0] = MitsubishiPacketType_GetSettingsInformation; //Get Settings Info
