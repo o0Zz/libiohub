@@ -13,8 +13,6 @@
 #define SPI_HOST_ID				SPI2_HOST
 #define SPI_CLOCK_SPEED_HZ		1000000  /*!< 1 MHz default clock speed */
 
-static const char *TAG = "iohub_spi";
-
 typedef struct {
     spi_device_handle_t spi_handle;
     spi_bus_config_t bus_config;
@@ -84,7 +82,7 @@ ret_code_t iohub_spi_init(spi_ctx *aCtx, u32 aCSnPin, IOHubSPIMode aMode)
     aCtx->mMode = aMode;
     aCtx->mCtx = esp_ctx;
 
-    ESP_LOGI(TAG, "SPI initialized successfully (CS: %d)", aCSnPin);
+    IOHUB_LOG_INFO("SPI initialized successfully (CS: %d)", aCSnPin);
     return SUCCESS;
 }
 
@@ -111,7 +109,7 @@ void iohub_spi_uninit(spi_ctx *aCtx)
     free(esp_ctx);
     aCtx->mCtx = NULL;
 
-    ESP_LOGI(TAG, "SPI uninitialized");
+    IOHUB_LOG_INFO("SPI uninitialized");
 }
 
 /* ------------------------------------------------------------- */

@@ -2,7 +2,6 @@
 #include "platform/iohub_platform.h"
 #include "driver/uart.h"
 #include "driver/gpio.h"
-#include "esp_log.h"
 #include "esp_err.h"
 #include <string.h>
 

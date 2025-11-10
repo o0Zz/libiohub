@@ -1,7 +1,6 @@
 #include "platform/iohub_i2c.h"
 #include "platform/iohub_platform.h"
 #include "driver/i2c_master.h"
-#include "esp_log.h"
 #include "esp_err.h"
 
 /* I2C Configuration for ESP32-C6 */
@@ -9,8 +8,6 @@
 #define I2C_MASTER_SDA_IO           5    /*!< GPIO number used for I2C master data  */
 #define I2C_MASTER_NUM              0    /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
 #define I2C_MASTER_FREQ_HZ          100000     /*!< I2C master clock frequency */
-
-static const char *TAG = "iohub_i2c";
 
 typedef struct {
     i2c_master_bus_handle_t bus_handle;
@@ -27,7 +24,7 @@ int iohub_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
     
     esp32_i2c_ctx_t *esp_ctx = (esp32_i2c_ctx_t*)malloc(sizeof(esp32_i2c_ctx_t));
     if (!esp_ctx) {
-        ESP_LOGE(TAG, "Failed to allocate memory for I2C context");
+        IOHUB_LOG_ERROR("Failed to allocate memory for I2C context");
         return E_DEVICE_INIT_FAILED;
     }
     
@@ -46,7 +43,7 @@ int iohub_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
     
     esp_err_t ret = i2c_new_master_bus(&i2c_mst_config, &esp_ctx->bus_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize I2C master bus: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to initialize I2C master bus: %s", esp_err_to_name(ret));
         free(esp_ctx);
         return E_DEVICE_INIT_FAILED;
     }
@@ -60,7 +57,7 @@ int iohub_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
     
     ret = i2c_master_bus_add_device(esp_ctx->bus_handle, &dev_cfg, &esp_ctx->dev_handle);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to add I2C device: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to add I2C device: %s", esp_err_to_name(ret));
         i2c_del_master_bus(esp_ctx->bus_handle);
         free(esp_ctx);
         return E_DEVICE_INIT_FAILED;
@@ -70,7 +67,7 @@ int iohub_i2c_init(i2c_ctx *aCtx, u8 aI2CDeviceAddr)
     aCtx->mCtx = esp_ctx;
     aCtx->mI2CDeviceAddr = aI2CDeviceAddr;
     
-    ESP_LOGI(TAG, "I2C initialized successfully for device 0x%02X", aI2CDeviceAddr);
+    IOHUB_LOG_INFO("I2C initialized successfully for device 0x%02X", aI2CDeviceAddr);
     return SUCCESS;
 }
 
@@ -97,7 +94,7 @@ void iohub_i2c_uninit(i2c_ctx *aCtx)
     free(esp_ctx);
     aCtx->mCtx = NULL;
     
-    ESP_LOGI(TAG, "I2C uninitialized");
+    IOHUB_LOG_INFO("I2C uninitialized");
 }
 
 /* --------------------------------------------------------- */
@@ -133,7 +130,7 @@ ret_code_t iohub_i2c_read(i2c_ctx *aCtx, u8 *aBuffer, const u16 aLen)
     
     esp_err_t ret = i2c_master_receive(esp_ctx->dev_handle, aBuffer, aLen, -1);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to read from I2C device: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to read from I2C device: %s", esp_err_to_name(ret));
         if (ret == ESP_ERR_TIMEOUT) {
             return E_TIMEOUT;
         } else if (ret == ESP_ERR_INVALID_RESPONSE) {
@@ -142,7 +139,7 @@ ret_code_t iohub_i2c_read(i2c_ctx *aCtx, u8 *aBuffer, const u16 aLen)
         return E_READ_ERROR;
     }
     
-    ESP_LOGD(TAG, "Successfully read %d bytes from I2C device 0x%02X", aLen, esp_ctx->device_addr);
+    IOHUB_LOG_DEBUG("Successfully read %d bytes from I2C device 0x%02X", aLen, esp_ctx->device_addr);
     return SUCCESS;
 }
 
@@ -161,7 +158,7 @@ ret_code_t iohub_i2c_write(i2c_ctx *aCtx, const u8 *aBuffer, const u16 aLen, BOO
     
     esp_err_t ret = i2c_master_transmit(esp_ctx->dev_handle, aBuffer, aLen, -1);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to write to I2C device: %s", esp_err_to_name(ret));
+        IOHUB_LOG_ERROR("Failed to write to I2C device: %s", esp_err_to_name(ret));
         if (ret == ESP_ERR_TIMEOUT) {
             return E_TIMEOUT;
         } else if (ret == ESP_ERR_INVALID_RESPONSE) {
@@ -170,6 +167,6 @@ ret_code_t iohub_i2c_write(i2c_ctx *aCtx, const u8 *aBuffer, const u16 aLen, BOO
         return E_WRITE_ERROR;
     }
     
-    ESP_LOGD(TAG, "Successfully wrote %d bytes to I2C device 0x%02X", aLen, esp_ctx->device_addr);
+    IOHUB_LOG_DEBUG("Successfully wrote %d bytes to I2C device 0x%02X", aLen, esp_ctx->device_addr);
     return SUCCESS;
 }

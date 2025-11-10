@@ -3,12 +3,14 @@
 #include "utils/iohub_errors.h"
 #include "utils/iohub_types.h"
 #include "driver/gpio.h"
-#include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
+
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#include "esp_log.h"
 
 static inline void iohub_platform_init()
 {
