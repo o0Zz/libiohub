@@ -628,8 +628,9 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 	ret_code_t ret = iohub_heatpump_toshiba_query(ctx, TOSHIBA_FUNCTION_GROUP1, &response);
 	if ((ret != SUCCESS) || (response.mSize < 12) || (response.mData[7] != TOSHIBA_FUNCTION_GROUP1))
 	{
-		IOHUB_LOG_ERROR("Toshiba: Failed to get state group1");
-		return E_INVALID_DATA;
+		IOHUB_LOG_ERROR("Toshiba: Failed to get state Group1, marking as disconnected...");
+		ctx->mfConnected = FALSE; 
+		return E_TIMEOUT;
 	}
 
 	aSettings->mMode = iohub_heatpump_toshiba_byte_to_mode(response.mData[8]);

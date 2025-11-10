@@ -187,6 +187,8 @@ typedef struct heatpump_pkt_s
 			.mData = {0xCA, 0x01}
 		};
 
+		ctx->mfConnected = FALSE;
+
 		ret_code_t theRet = iohub_heatpump_mitsubishi_write_pkt(ctx, &thePacket);
 		if (theRet == SUCCESS)
 		{
@@ -312,7 +314,11 @@ ret_code_t iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *ctx, IoH
 	memset(&thePkt, 0x00, sizeof(thePkt));
 	theRet = iohub_heatpump_mitsubishi_read_pkt(ctx, &thePkt);
 	if (theRet != SUCCESS)
+	{
+		IOHUB_LOG_ERROR("Mitsu: Failed to get state, marking as disconnected...");
+		ctx->mfConnected = FALSE;
 		return theRet;
+	}
 
 	if (thePkt.mData[0] != MitsubishiPacketType_GetSettingsInformation)
 		return E_INVALID_DATA;
