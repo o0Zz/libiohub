@@ -16,6 +16,7 @@ extern "C" {
 typedef struct digital_async_receiver_s
 {	
 	u8											mPin;
+	BOOL										mIsRunning;
 	u32 										mLastTimeUs;
 	const digital_async_receiver_interface		*mInterfaceList[DIGITAL_ASYNC_RECEIVER_INTERFACE_MAX];
 	digital_async_receiver_interface_ctx		*mInterfaceCtx[DIGITAL_ASYNC_RECEIVER_INTERFACE_MAX];
@@ -31,12 +32,13 @@ void    	iohub_digital_async_receiver_uninit(digital_async_receiver *ctx);
 
 void    	iohub_digital_async_receiver_start(digital_async_receiver *ctx);
 void    	iohub_digital_async_receiver_stop(digital_async_receiver *ctx);
+BOOL   		iohub_digital_async_receiver_is_running(digital_async_receiver *ctx);
 
 u16     	iohub_digital_async_receiver_wait_for_packet(digital_async_receiver *ctx);
 BOOL    	iohub_digital_async_receiver_has_packet_available(digital_async_receiver *ctx, u16 *receiverId);
 void    	iohub_digital_async_receiver_packet_handled(digital_async_receiver *ctx, u16 receiverId);
 
-void    	iohub_digital_async_receiver_register_plugin(digital_async_receiver *ctx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx);
+BOOL    	iohub_digital_async_receiver_register(digital_async_receiver *ctx, const digital_async_receiver_interface *anInterface, digital_async_receiver_interface_ctx *anInterfaceCtx);
 
 void    	iohub_digital_async_receiver_real_time_dump(digital_async_receiver *ctx);
 

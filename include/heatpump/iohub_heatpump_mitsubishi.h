@@ -9,21 +9,21 @@ extern "C" {
 
 /* -------------------------------------------------------------- */
 
-typedef struct heatpump_mitsubishi_ctx_s
+typedef struct heatpump_mitsubishi_s
 {
     uart_ctx            *mUartCtx;
 	BOOL				mfConnected;
-}heatpump_mitsubishi_ctx;
+}heatpump_mitsubishi;
 
 /* -------------------------------------------------------------- */
 
-ret_code_t  		iohub_heatpump_mitsubishi_init(heatpump_mitsubishi_ctx *aCtx, uart_ctx *anUART);
-void    			iohub_heatpump_mitsubishi_uninit(heatpump_mitsubishi_ctx *aCtx);
+ret_code_t  		iohub_heatpump_mitsubishi_init(heatpump_mitsubishi *aCtx, uart_ctx *anUART);
+void    			iohub_heatpump_mitsubishi_uninit(heatpump_mitsubishi *aCtx);
 
-ret_code_t			iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi_ctx *aCtx, const IoHubHeatpumpSettings *aSettings);
-ret_code_t 			iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi_ctx *aCtx, IoHubHeatpumpSettings *aSettings);
+ret_code_t			iohub_heatpump_mitsubishi_set_state(heatpump_mitsubishi *aCtx, const IoHubHeatpumpSettings *aSettings);
+ret_code_t 			iohub_heatpump_mitsubishi_get_state(heatpump_mitsubishi *aCtx, IoHubHeatpumpSettings *aSettings);
 
-ret_code_t 			iohub_heatpump_mitsubishi_get_room_temperature(heatpump_mitsubishi_ctx *aCtx, float *aTemperature);
+ret_code_t 			iohub_heatpump_mitsubishi_get_room_temperature(heatpump_mitsubishi *aCtx, float *aTemperature);
 
 #ifdef __cplusplus
 }

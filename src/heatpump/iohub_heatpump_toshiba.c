@@ -255,7 +255,7 @@ typedef struct heatpump_pkt_s
 	}
 	/* -------------------------------------------------------------- */
 		
-	static ret_code_t iohub_heatpump_toshiba_read_byte(heatpump_toshiba_ctx *ctx, u8 *byte, u16 timeoutMs)
+	static ret_code_t iohub_heatpump_toshiba_read_byte(heatpump_toshiba *ctx, u8 *byte, u16 timeoutMs)
 	{
 		u16 size = 0;
 		
@@ -280,7 +280,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 		
-	static ret_code_t iohub_heatpump_toshiba_read_pkt(heatpump_toshiba_ctx *ctx, heatpump_pkt *aPkt)
+	static ret_code_t iohub_heatpump_toshiba_read_pkt(heatpump_toshiba *ctx, heatpump_pkt *aPkt)
 	{
 		aPkt->mSTX = 0x00;
 		while (aPkt->mSTX != TOSHIBA_PACKET_STX)
@@ -332,7 +332,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	static ret_code_t iohub_heatpump_toshiba_send_command(heatpump_toshiba_ctx *ctx, u8 *data, u16 dataSize)
+	static ret_code_t iohub_heatpump_toshiba_send_command(heatpump_toshiba *ctx, u8 *data, u16 dataSize)
 	{
 		u8 buffer[64]; // Extra space for packet overhead
 		int bufferPos = 0;
@@ -377,7 +377,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	static ret_code_t iohub_heatpump_toshiba_query(heatpump_toshiba_ctx *ctx, u8 function, heatpump_pkt *result)
+	static ret_code_t iohub_heatpump_toshiba_query(heatpump_toshiba *ctx, u8 function, heatpump_pkt *result)
 	{
 		u8 buffer[] = { function };
 		ret_code_t ret = iohub_heatpump_toshiba_send_command(ctx, buffer, sizeof(buffer));
@@ -398,7 +398,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	static void iohub_heatpump_toshiba_flush_rx(heatpump_toshiba_ctx *ctx)
+	static void iohub_heatpump_toshiba_flush_rx(heatpump_toshiba *ctx)
 	{
 		heatpump_pkt packet;
 		while(iohub_heatpump_toshiba_read_pkt(ctx, &packet) == SUCCESS);
@@ -406,7 +406,7 @@ typedef struct heatpump_pkt_s
 
 	/* -------------------------------------------------------------- */
 
-	static ret_code_t iohub_heatpump_toshiba_connect(heatpump_toshiba_ctx *ctx)
+	static ret_code_t iohub_heatpump_toshiba_connect(heatpump_toshiba *ctx)
 	{
 		ret_code_t ret;
 		heatpump_pkt packet;
@@ -462,7 +462,7 @@ typedef struct heatpump_pkt_s
 	
 	/* -------------------------------------------------------------- */
 
-	static ret_code_t iohub_heatpump_toshiba_command(heatpump_toshiba_ctx *ctx, u8 function, u8 value)
+	static ret_code_t iohub_heatpump_toshiba_command(heatpump_toshiba *ctx, u8 function, u8 value)
 	{
 		heatpump_pkt result;
 
@@ -486,7 +486,7 @@ typedef struct heatpump_pkt_s
 	
 	/* -------------------------------------------------------------- */
 	
-	static void iohub_heatpump_toshiba_dump_all(heatpump_toshiba_ctx *ctx, u8 *functions, u16 functionCount)
+	static void iohub_heatpump_toshiba_dump_all(heatpump_toshiba *ctx, u8 *functions, u16 functionCount)
 	{
 		heatpump_pkt response;
 
@@ -521,13 +521,13 @@ typedef struct heatpump_pkt_s
 	
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUART)
+ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba *ctx, uart_ctx *anUART)
 {
 	if (!ctx || !anUART) {
 		return E_INVALID_PARAMETERS;
 	}
 	
-	memset(ctx, 0x00, sizeof(heatpump_toshiba_ctx));
+	memset(ctx, 0x00, sizeof(heatpump_toshiba));
 	
 	ctx->mUartCtx = anUART;
 	ctx->mfConnected = FALSE;
@@ -552,7 +552,7 @@ ret_code_t iohub_heatpump_toshiba_init(heatpump_toshiba_ctx *ctx, uart_ctx *anUA
 
 /* -------------------------------------------------------------- */
 
-void iohub_heatpump_toshiba_uninit(heatpump_toshiba_ctx *ctx)
+void iohub_heatpump_toshiba_uninit(heatpump_toshiba *ctx)
 {
 	if (ctx && ctx->mUartCtx) 
 	{
@@ -563,7 +563,7 @@ void iohub_heatpump_toshiba_uninit(heatpump_toshiba_ctx *ctx)
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoHubHeatpumpSettings *aSettings)
+ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba *ctx, const IoHubHeatpumpSettings *aSettings)
 {
 	if (!ctx || !aSettings) {
 		return E_INVALID_PARAMETERS;
@@ -608,7 +608,7 @@ ret_code_t iohub_heatpump_toshiba_set_state(heatpump_toshiba_ctx *ctx, const IoH
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeatpumpSettings *aSettings)
+ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba *ctx, IoHubHeatpumpSettings *aSettings)
 {
 	heatpump_pkt response;
 
@@ -665,7 +665,7 @@ ret_code_t iohub_heatpump_toshiba_get_state(heatpump_toshiba_ctx *ctx, IoHubHeat
 
 /* -------------------------------------------------------------- */
 
-ret_code_t iohub_heatpump_toshiba_get_room_temperature(heatpump_toshiba_ctx *ctx, float *aTemperature)
+ret_code_t iohub_heatpump_toshiba_get_room_temperature(heatpump_toshiba *ctx, float *aTemperature)
 {	
 	heatpump_pkt response;
 

@@ -95,17 +95,17 @@ void iohub_heatpump_midea_space(heatpump_midea *ctx, u16 aTimeUs)
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_init(heatpump_midea *ctx, u32 aGPIOTx)
+int iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *receiver, u32 txPin)
 {
 	int theRet = SUCCESS;
 
 	memset(ctx, 0x00, sizeof(heatpump_midea));
 
-	ctx->mDigitalPinTx = aGPIOTx;
-
+	ctx->mDigitalPinTx = txPin;
 	if (ctx->mDigitalPinTx != IOHUB_GPIO_PIN_INVALID)
 		iohub_digital_set_pin_mode(ctx->mDigitalPinTx, PinMode_Output);
 
+	iohub_digital_async_receiver_register(receiver, iohub_heatpump_midea_get_interface(), ctx);
  
 	return theRet;
 }
@@ -121,10 +121,6 @@ void iohub_heatpump_midea_uninit(heatpump_midea *ctx)
 void iohub_heatpump_midea_send_nec(heatpump_midea *ctx, const u8 aData[6])
 {
 	u8 theData[6];
-	
-#if defined(USE_PWM) && USE_PWM
-	//irsend.enableIROut(38);
-#endif
 
 	memcpy(theData, aData, sizeof(theData));
 	
@@ -394,7 +390,7 @@ const digital_async_receiver_interface	*iohub_heatpump_midea_get_interface(void)
 {
 	static const digital_async_receiver_interface sInterface = 
 	{
-		DRV_HEATPUMP_MIDEA_ID,
+		RECEIVER_HEATPUMP_MIDEA_ID,
 		iohub_heatpump_midea_detectPacket,
 		iohub_heatpump_midea_packetHandled
 	};

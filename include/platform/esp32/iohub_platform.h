@@ -60,23 +60,10 @@ static inline ret_code_t iohub_attach_interrupt(gpio_num_t pin, gpio_isr_t isr_h
         }
         isr_service_installed = true;
     }
-    
-    // Configure pin as input with pull-up
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << pin),
-        .mode = GPIO_MODE_INPUT,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = intr_type
-    };
-    esp_err_t ret = gpio_config(&io_conf);
-    if (ret != ESP_OK) {
-        return (ret_code_t)ret;
-    }
-    
-    // Add ISR handler
-    ret = gpio_isr_handler_add(pin, isr_handler, arg);
-    return (ret_code_t)ret;
+
+    gpio_set_intr_type(pin, intr_type);
+
+    return (ret_code_t)gpio_isr_handler_add(pin, isr_handler, arg);
 }
 
 static inline ret_code_t iohub_detach_interrupt(u8 pin)
