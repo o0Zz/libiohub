@@ -23,11 +23,11 @@ typedef struct heatpump_midea_s
 
 /* -------------------------------------------------------------- */
 
-int     								iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *receiver, u32 txPin);
+ret_code_t 								iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *receiver, u32 txPin);
 void    								iohub_heatpump_midea_uninit(heatpump_midea *ctx);
 
-int										iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSettings *settings);
-BOOL    								iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *settings);
+ret_code_t								iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSettings *settings);
+ret_code_t 								iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *settings);
 
 const digital_async_receiver_interface 	*iohub_heatpump_midea_get_interface(void);
 

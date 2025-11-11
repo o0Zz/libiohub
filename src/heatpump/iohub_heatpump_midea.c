@@ -1,15 +1,15 @@
 #include "heatpump/iohub_heatpump_midea.h"
 #include "utils/iohub_logs.h"
 
-#define DRV_CLIM_R51L1_BGE_RECV_ACCURACY     0.2
+#define HEATPUMP_R51L1_BGE_RECV_ACCURACY     0.2
 
-#define NEC_CLIM_HDR_MARK		4500
-#define NEC_CLIM_HDR_SPACE	 	4300
-#define NEC_CLIM_BIT_MARK		600 //512 - 704
-#define NEC_CLIM_ONE_SPACE	 	1600 //1580
+#define NEC_HEATPUMP_HDR_MARK		4500
+#define NEC_HEATPUMP_HDR_SPACE	 	4300
+#define NEC_HEATPUMP_BIT_MARK		600 //512 - 704
+#define NEC_HEATPUMP_ONE_SPACE	 	1600 //1580
 
-#define NEC_CLIM_ZERO_SPACE		500   //400 - 592
-#define NEC_CLIM_RPT_SPACE	 	2250
+#define NEC_HEATPUMP_ZERO_SPACE		500   //400 - 592
+#define NEC_HEATPUMP_RPT_SPACE	 	2250
 
 #define USE_PWM 			0
 
@@ -24,7 +24,8 @@
 
 /* ----------------------------------------------------------------- */
 
-#define TEMPERATURE_NONE	 	0xE0
+#define TEMPERATURE_OFF	 	0xE0
+#define TEMPERATURE_FAN	 	0xE4
 
 const u8 kTemperatureMidea[] =
 {
@@ -44,28 +45,18 @@ const u8 kTemperatureMidea[] =
 	0xB0, //30
 };
 
-const u8 kHeatpumpModeMidea[] =
-{
-	0x0F, //None //Invalid !
-	
-	0x00, //Cold
-	0x04, //Dry HeatpumpFanSpeed_Auto
-	0x05, //Fan TEMPERATURE_NONE + HeatpumpMode_Dry
-	0x08, //Auto HeatpumpFanSpeed_Auto
-	0x0C, //Heat
-};
+#define HEATPUMP_MODE_MIDEA_COLD			0x00
+#define HEATPUMP_MODE_MIDEA_DRY				0x04
+#define HEATPUMP_MODE_MIDEA_AUTO			0x08
+#define HEATPUMP_MODE_MIDEA_HEAT			0x0C
 
-const u8 kHeatpumpFanSpeedMidea[] =
-{
-	0x0F, //None
-	
-	0xBF, //Auto
-	0x3F, //High
-	0x5F, //Med
-	0x9F, //Low
-};
-
-u8 kHeatpumpFanSpeedMideaDryAuto = 0x1F;
+#define HEATPUMP_FAN_SPEED_MIDEA_AUTO		0x1F
+#define HEATPUMP_FAN_SPEED_MIDEA_LOW		0x9F
+#define HEATPUMP_FAN_SPEED_MIDEA_MED		0x5F
+#define HEATPUMP_FAN_SPEED_MIDEA_HIGH		0x3F
+#define HEATPUMP_FAN_SPEED_MIDEA_DIRECTION	0x0F
+#define HEATPUMP_FAN_SPEED_MIDEA_SWING		0x6B
+#define HEATPUMP_FAN_SPEED_MIDEA_OFF		0x7B
 
 /* ----------------------------------------------------------------- */
 
@@ -95,10 +86,8 @@ void iohub_heatpump_midea_space(heatpump_midea *ctx, u16 aTimeUs)
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *receiver, u32 txPin)
+ret_code_t iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *receiver, u32 txPin)
 {
-	int theRet = SUCCESS;
-
 	memset(ctx, 0x00, sizeof(heatpump_midea));
 
 	ctx->mDigitalPinTx = txPin;
@@ -107,7 +96,7 @@ int iohub_heatpump_midea_init(heatpump_midea *ctx, digital_async_receiver *recei
 
 	iohub_digital_async_receiver_register(receiver, iohub_heatpump_midea_get_interface(), ctx);
  
-	return theRet;
+	return SUCCESS;
 }
 
 /* ----------------------------------------------------------------- */
@@ -124,31 +113,35 @@ void iohub_heatpump_midea_send_nec(heatpump_midea *ctx, const u8 aData[6])
 
 	memcpy(theData, aData, sizeof(theData));
 	
-	iohub_heatpump_midea_mark(ctx, NEC_CLIM_HDR_MARK);
-	iohub_heatpump_midea_space(ctx, NEC_CLIM_HDR_SPACE);
-	
+	iohub_interrupts_disable();
+
+	iohub_heatpump_midea_mark(ctx, NEC_HEATPUMP_HDR_MARK);
+	iohub_heatpump_midea_space(ctx, NEC_HEATPUMP_HDR_SPACE);
+
 	for (u8 i = 0; i < sizeof(theData); i++)
 	{
 		for (u8 k = 0; k < 8; k++)
 		{
-			iohub_heatpump_midea_mark(ctx, NEC_CLIM_BIT_MARK);
+			iohub_heatpump_midea_mark(ctx, NEC_HEATPUMP_BIT_MARK);
 		
 			if (theData[i] & 0x80)
-				iohub_heatpump_midea_space(ctx, NEC_CLIM_ONE_SPACE);
+				iohub_heatpump_midea_space(ctx, NEC_HEATPUMP_ONE_SPACE);
 			else
-				iohub_heatpump_midea_space(ctx, NEC_CLIM_ZERO_SPACE);
+				iohub_heatpump_midea_space(ctx, NEC_HEATPUMP_ZERO_SPACE);
 			
 			theData[i] <<= 1;
 		}
 	}
-	
-	iohub_heatpump_midea_mark(ctx, NEC_CLIM_BIT_MARK);
-	iohub_heatpump_midea_space(ctx, NEC_CLIM_HDR_SPACE);
+
+	iohub_heatpump_midea_mark(ctx, NEC_HEATPUMP_BIT_MARK);
+	iohub_heatpump_midea_space(ctx, NEC_HEATPUMP_HDR_SPACE);
+
+	iohub_interrupts_enable();
 }
 
 /* ----------------------------------------------------------------- */
 
-int iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSettings *aSettings)
+ret_code_t iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSettings *aSettings)
 {
 	u8				theValue = 0;
 	u8	 			theData[6] = {0x00};
@@ -160,14 +153,29 @@ int iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSetti
 	
 	//Set Fan Speed
 	if (aSettings->mAction == HeatpumpAction_OFF)
-		theValue = 0x7B;
+		theValue = HEATPUMP_FAN_SPEED_MIDEA_OFF; //Off
 	else if (aSettings->mAction == HeatpumpAction_Direction)
-		theValue = HeatpumpFanSpeed_None;
+		theValue = HEATPUMP_FAN_SPEED_MIDEA_DIRECTION; //Direction
 	else if (aSettings->mAction == HeatpumpAction_ON)
 	{
-		theValue = kHeatpumpFanSpeedMidea[aSettings->mFanSpeed];
-		if (aSettings->mMode == HeatpumpMode_Dry || aSettings->mMode == HeatpumpMode_Auto)
-			theValue = kHeatpumpFanSpeedMideaDryAuto; //Ignore Fan speed: AUTO
+		if (aSettings->mMode == HeatpumpMode_Auto || aSettings->mMode == HeatpumpMode_Dry)
+		{
+				//Auto mode or Dry mode always use Auto fan speed
+			theValue = HEATPUMP_FAN_SPEED_MIDEA_AUTO;
+		}
+		else
+		{
+			if (aSettings->mFanSpeed == HeatpumpFanSpeed_Auto)
+				theValue = HEATPUMP_FAN_SPEED_MIDEA_AUTO | 0xA0;
+			else if (aSettings->mFanSpeed == HeatpumpFanSpeed_Low)
+				theValue = HEATPUMP_FAN_SPEED_MIDEA_LOW;
+			else if (aSettings->mFanSpeed == HeatpumpFanSpeed_Med)
+				theValue = HEATPUMP_FAN_SPEED_MIDEA_MED;
+			else if (aSettings->mFanSpeed == HeatpumpFanSpeed_High)
+				theValue = HEATPUMP_FAN_SPEED_MIDEA_HIGH;
+			else
+				return E_INVALID_PARAMETERS;
+		}
 	}
 	else
 	{
@@ -179,21 +187,33 @@ int iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSetti
 
 	//Set Temperature and Mode
 	if (aSettings->mAction == HeatpumpAction_OFF || aSettings->mAction == HeatpumpAction_Direction)
-		theValue = TEMPERATURE_NONE;
+		theValue = TEMPERATURE_OFF;
 	else if (aSettings->mMode == HeatpumpMode_Fan)
-		theValue = TEMPERATURE_NONE | HeatpumpMode_Dry;
+		theValue = TEMPERATURE_FAN;
 	else
 	{
 		if (aSettings->mTemperature < 17 || aSettings->mTemperature > 30)
 			return E_INVALID_PARAMETERS;
 
-		theValue = kTemperatureMidea[aSettings->mTemperature - 17] | kHeatpumpModeMidea[aSettings->mMode];
+		u8 mode = HEATPUMP_MODE_MIDEA_AUTO;
+		if (aSettings->mMode == HeatpumpMode_Cold)
+			mode = HEATPUMP_MODE_MIDEA_COLD;
+		else if (aSettings->mMode == HeatpumpMode_Heat)
+			mode = HEATPUMP_MODE_MIDEA_HEAT;
+		else if (aSettings->mMode == HeatpumpMode_Auto)
+			mode = HEATPUMP_MODE_MIDEA_AUTO;
+		else if (aSettings->mMode == HeatpumpMode_Dry)
+			mode = HEATPUMP_MODE_MIDEA_DRY;
+		else
+			return E_INVALID_PARAMETERS;
+
+		theValue = kTemperatureMidea[aSettings->mTemperature - 17] | mode;
 	}
 
 	theData[4] = theValue;
 	theData[5] = (theValue ^ 0xFF);
  
-	LOG_DEBUG("Sending");
+	LOG_DEBUG("Midea: Sending");
 	LOG_BUFFER(theData, sizeof(theData));
 	
 	for (u8 k = 0; k < 2; k++) //Send code 2 times
@@ -206,7 +226,7 @@ int iohub_heatpump_midea_set_state(heatpump_midea *ctx, const IoHubHeatpumpSetti
 
 static u16 iohub_heatpump_midea_read_timing(heatpump_midea *ctx) 
 {
-	LOG_DEBUG("%d, ", ctx->mTimings[ctx->mTimingReadIdx]);
+	//LOG_DEBUG("Midea: Read timing: %d", ctx->mTimings[ctx->mTimingReadIdx]);
 	return ctx->mTimings[ctx->mTimingReadIdx++];
 }
 
@@ -218,16 +238,16 @@ BOOL iohub_heatpump_midea_read_bit(heatpump_midea *ctx, u8 *aBit)
     u32 	theTimeMs;
 
 	theTimeMs = iohub_heatpump_midea_read_timing(ctx);
-	if (!IS_EXPECTED_TIME(theTimeMs, NEC_CLIM_BIT_MARK, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
+	if (!IS_EXPECTED_TIME(theTimeMs, NEC_HEATPUMP_BIT_MARK, HEATPUMP_R51L1_BGE_RECV_ACCURACY))
 		return FALSE;
 
 	theTimeMs = iohub_heatpump_midea_read_timing(ctx);
-    if (IS_EXPECTED_TIME(theTimeMs, NEC_CLIM_ZERO_SPACE, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
+    if (IS_EXPECTED_TIME(theTimeMs, NEC_HEATPUMP_ZERO_SPACE, HEATPUMP_R51L1_BGE_RECV_ACCURACY))
     {
         *aBit = 0;
         theRet = TRUE;
     }
-    if (IS_EXPECTED_TIME(theTimeMs, NEC_CLIM_ONE_SPACE, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
+    if (IS_EXPECTED_TIME(theTimeMs, NEC_HEATPUMP_ONE_SPACE, HEATPUMP_R51L1_BGE_RECV_ACCURACY))
     {
         *aBit = 1;
         theRet = TRUE;
@@ -240,7 +260,7 @@ BOOL iohub_heatpump_midea_read_bit(heatpump_midea *ctx, u8 *aBit)
 
 /* ----------------------------------------------------- */
 
-BOOL iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *aSettings) 
+ret_code_t iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *aSettings) 
 {
 	u8          theBit = 0;
 	u8	 		theData[6] = {0x00};
@@ -254,7 +274,7 @@ BOOL iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *
 		for (u8 k = 0; k < 8; k++)
 		{
 			if (!iohub_heatpump_midea_read_bit(ctx, &theBit))
-				return FALSE;
+				return E_INVALID_DATA;
 			
 			theData[i] <<= 1;
 			theData[i] |= theBit;
@@ -265,58 +285,58 @@ BOOL iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *
 	LOG_BUFFER(theData, sizeof(theData));
 	
 	if (theData[0] != (theData[1] ^ 0xFF))
-		return FALSE;
+		return E_INVALID_CRC;
 	if (theData[2] != (theData[3] ^ 0xFF))
-		return FALSE;
+		return E_INVALID_CRC;
 	if (theData[4] != (theData[5] ^ 0xFF))
-		return FALSE;
+		return E_INVALID_CRC;
 	
-	if (theData[2] == 0x7B)
+	if (theData[2] == HEATPUMP_FAN_SPEED_MIDEA_OFF) //OFF
 	{
 		aSettings->mAction = HeatpumpAction_OFF;
 		aSettings->mFanSpeed = HeatpumpFanSpeed_None;
 	}
-	else if (theData[2] == HeatpumpFanSpeed_None)
+	else if (theData[2] == HEATPUMP_FAN_SPEED_MIDEA_DIRECTION || theData[2] == HEATPUMP_FAN_SPEED_MIDEA_SWING) //Direction || Swing
 	{
+			//Direction mode
 		aSettings->mAction = HeatpumpAction_Direction;
 		aSettings->mFanSpeed = HeatpumpFanSpeed_None;
 	}
 	else
 	{
 		aSettings->mAction = HeatpumpAction_ON;
-		aSettings->mFanSpeed = HeatpumpFanSpeed_Auto; //In case of kHeatpumpFanSpeedMideaDryAuto, aFanSpeed will be set to Auto
+		aSettings->mFanSpeed = HeatpumpFanSpeed_Auto; //Default is Auto to handle (0x1F) and (0x1F | 0xA0 = 0xBF)
 
-		for (int i=0; i<HeatpumpFanSpeed_Count; i++)
-		{
-			if (theData[2] == kHeatpumpFanSpeedMidea[i])
-			{
-				aSettings->mFanSpeed = (IoHubHeatpumpFanSpeed)i;
-				break;
-			}
-		}
-
+		if (theData[2] == HEATPUMP_FAN_SPEED_MIDEA_LOW)
+			aSettings->mFanSpeed = HeatpumpFanSpeed_Low;
+		else if (theData[2] == HEATPUMP_FAN_SPEED_MIDEA_MED)
+			aSettings->mFanSpeed = HeatpumpFanSpeed_Med;
+		else if (theData[2] == HEATPUMP_FAN_SPEED_MIDEA_HIGH)
+			aSettings->mFanSpeed = HeatpumpFanSpeed_High;
 	}
-
-	if (theData[4] == TEMPERATURE_NONE) //OFF or direction
+	
+	if (theData[4] == TEMPERATURE_OFF) 
 	{
 		aSettings->mTemperature = 0;
 		aSettings->mMode = HeatpumpMode_None;
 	}
-	else if (theData[4] == (TEMPERATURE_NONE | HeatpumpMode_Dry))
+	else if (theData[4] == TEMPERATURE_FAN)
 	{
+		aSettings->mTemperature = 0;
 		aSettings->mMode = HeatpumpMode_Fan;
 	}
 	else
 	{
-		for (int i=0; i<HeatpumpMode_Count; i++)
-		{
-			if ((theData[4] & 0x0F) == kHeatpumpModeMidea[i])
-			{
-				aSettings->mMode = (IoHubHeatpumpMode)i;
-				break;
-			}	
-		}
-		
+		aSettings->mMode = HeatpumpMode_None;
+		if ((theData[4] & 0x0C) == HEATPUMP_MODE_MIDEA_AUTO)
+			aSettings->mMode = HeatpumpMode_Auto;
+		else if ((theData[4] & 0x0C) == HEATPUMP_MODE_MIDEA_COLD)
+			aSettings->mMode = HeatpumpMode_Cold;
+		else if ((theData[4] & 0x0C) == HEATPUMP_MODE_MIDEA_HEAT)
+			aSettings->mMode = HeatpumpMode_Heat;
+		else if ((theData[4] & 0x0C) == HEATPUMP_MODE_MIDEA_DRY)
+			aSettings->mMode = HeatpumpMode_Dry;		
+
 		for (int i=0; i<(sizeof(kTemperatureMidea)/sizeof(u8)); i++)
 		{
 			if ((theData[4] & 0xF0) == kTemperatureMidea[i])
@@ -327,7 +347,15 @@ BOOL iohub_heatpump_midea_get_state(heatpump_midea *ctx, IoHubHeatpumpSettings *
 		}
 	}
 
-	return TRUE;
+	aSettings->mVaneMode = HeatpumpVaneMode_Auto; //Midea does not support vane mode setting
+
+	LOG_DEBUG("Midea: Action=%d, Mode=%d, FanSpeed=%d, Temp=%d, VaneMode=%d",
+				aSettings->mAction,
+				aSettings->mMode,
+				aSettings->mFanSpeed,
+				aSettings->mTemperature,
+				aSettings->mVaneMode);
+	return SUCCESS;
 }
 
 /* ----------------------------------------------------- */
@@ -341,12 +369,12 @@ BOOL iohub_heatpump_midea_detectPacket(digital_async_receiver_interface_ctx *ctx
 	switch(theCtx->mTimingCount)
 	{
 		case 1:
-			if (!IS_EXPECTED_TIME(aDurationUs, NEC_CLIM_HDR_MARK, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
+			if (!IS_EXPECTED_TIME(aDurationUs, NEC_HEATPUMP_HDR_MARK, HEATPUMP_R51L1_BGE_RECV_ACCURACY))
 				theCtx->mTimingCount = 0;
 			break;
 			
 		case 2:
-			if (!IS_EXPECTED_TIME(aDurationUs, NEC_CLIM_HDR_SPACE, DRV_CLIM_R51L1_BGE_RECV_ACCURACY))
+			if (!IS_EXPECTED_TIME(aDurationUs, NEC_HEATPUMP_HDR_SPACE, HEATPUMP_R51L1_BGE_RECV_ACCURACY))
 				theCtx->mTimingCount = 0;
 			break;
 			
